@@ -265,36 +265,6 @@ The overview dashboard also exposes a `Run now` action so an administrator can f
 3. Services normalize and correlate the collected evidence
 4. The dashboard, reports, and exports render from persisted data
 
-## Packaging Guidance For Distribution
-
-For GitHub or internal packaging:
-
-Include:
-
-- `admanagement/`
-- `frontend/`
-- `scripts/`
-- `tests/`
-- `docker-compose.prod.yml`
-- `docker-compose.yml`
-- `Dockerfile.backend`
-- `pyproject.toml`
-- `requirements.txt`
-- `.env.example`
-- `.gitignore`
-- `.dockerignore`
-- `README.md`
-- `Start-Dev.ps1`
-- `Stop-Dev.ps1`
-
-Do not include:
-
-- `.env`
-- `venv/`
-- `admanagement-data/`
-- `frontend/.next/`
-- `frontend/node_modules/`
-- generated logs, exports, or local runtime artifacts
 
 ## Operational Notes
 
