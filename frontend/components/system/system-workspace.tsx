@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { SectionPanel, StatCard } from "@/components/cards";
 import { PaginationFooter, TablePanel, usePagination } from "@/components/configuration/paginated-table";
-import { SchedulerStatus, SystemOverview, getSystemOverview } from "@/lib/api";
+import { SchedulerStatus, SystemOverview, applySystemUpdate, getSystemOverview } from "@/lib/api";
 import { formatDisplayDateTime } from "@/lib/datetime";
 
 function formatJobHeadline(job: SchedulerStatus["jobs"][number]) {
@@ -100,6 +100,7 @@ function DetailRows({
 export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOverview }) {
   const [overview, setOverview] = useState(initialOverview);
   const [loading, setLoading] = useState(false);
+  const [applying, setApplying] = useState(false);
 
   const jobsPagination = usePagination(overview.scheduler.jobs, 5);
 
@@ -110,6 +111,17 @@ export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOv
       setOverview(nextOverview);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const applyUpdate = async () => {
+    setApplying(true);
+    try {
+      await applySystemUpdate();
+      const nextOverview = await getSystemOverview(true);
+      setOverview(nextOverview);
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -134,6 +146,8 @@ export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOv
     ["Scheduler running", overview.scheduler.running ? "Yes" : "No"],
     ["Configured jobs", `${overview.scheduler.jobs.length}`],
     ["Update status", updateStatus.update_available ? "Update available" : updateStatus.status === "ok" ? "Current" : updateStatus.status],
+    ["Apply updates", overview.update_apply.enabled ? "Enabled" : "Disabled"],
+    ["Apply state", overview.update_apply.state],
   ];
 
   return (
@@ -164,9 +178,14 @@ export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOv
           title="Release monitoring"
           kicker="Version control"
           actions={
-            <button className="hero-pill hero-pill-outline" onClick={() => void refreshOverview()} type="button">
-              {loading ? "Refreshing..." : "Refresh status"}
-            </button>
+            <div className="section-actions">
+              <button className="hero-pill" disabled={!overview.update_apply.enabled || applying} onClick={() => void applyUpdate()} type="button">
+                {applying ? "Starting update..." : "Apply update"}
+              </button>
+              <button className="hero-pill hero-pill-outline" onClick={() => void refreshOverview()} type="button">
+                {loading ? "Refreshing..." : "Refresh status"}
+              </button>
+            </div>
           }
         >
           <div className="system-callout">
@@ -191,6 +210,7 @@ export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOv
           {updateStatus.upgrade_instructions?.length ? (
             <code className="update-banner-command">{updateStatus.upgrade_instructions.join(" && ")}</code>
           ) : null}
+          {overview.update_apply.last_error ? <div className="banner banner-danger">{overview.update_apply.last_error}</div> : null}
           <DetailRows rows={releaseRows} />
         </SectionPanel>
 

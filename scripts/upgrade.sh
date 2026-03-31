@@ -4,6 +4,23 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$ROOT_DIR/.env"
 
+compose_up() {
+  if docker compose version >/dev/null 2>&1; then
+    docker compose -f docker-compose.prod.yml pull || true
+    docker compose -f docker-compose.prod.yml up -d --build backend frontend
+    return 0
+  fi
+
+  if command -v docker-compose >/dev/null 2>&1; then
+    docker-compose -f docker-compose.prod.yml pull || true
+    docker-compose -f docker-compose.prod.yml up -d --build backend frontend
+    return 0
+  fi
+
+  echo "Neither docker compose nor docker-compose is available." >&2
+  exit 1
+}
+
 set_env_value() {
   local key="$1"
   local value="$2"
@@ -22,6 +39,5 @@ if command -v git >/dev/null 2>&1; then
     set_env_value "ADMANAGEMENT_UPDATE_CHANNEL" "branch"
   fi
 fi
-docker compose -f docker-compose.prod.yml pull || true
-docker compose -f docker-compose.prod.yml up -d --build
+compose_up
 echo "Upgrade complete."

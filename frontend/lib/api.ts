@@ -70,6 +70,17 @@ export type SystemOverview = {
   };
   scheduler: SchedulerStatus;
   update_status: UpdateStatus;
+  update_apply: {
+    enabled: boolean;
+    state: string;
+    last_requested_at_utc?: string | null;
+    last_started_at_utc?: string | null;
+    last_completed_at_utc?: string | null;
+    last_error?: string | null;
+    runner_container_id?: string | null;
+    host_project_path?: string | null;
+    runner_image?: string | null;
+  };
 };
 
 export type DashboardRunNowResult = {
@@ -455,8 +466,17 @@ export async function getSystemOverview(refresh = false): Promise<SystemOverview
         update_available: false,
         error: "System overview is unavailable.",
       },
+      update_apply: {
+        enabled: false,
+        state: "unavailable",
+        last_error: "System overview is unavailable.",
+      },
     };
   }
+}
+
+export async function applySystemUpdate() {
+  return writeJson<SystemOverview["update_apply"]>("/api/system/apply-update", "POST");
 }
 
 export async function getDashboardOverviewFiltered(params?: {

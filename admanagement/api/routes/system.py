@@ -41,6 +41,7 @@ def system_overview(
 ) -> dict[str, object]:
     settings = get_settings()
     update_monitor = getattr(request.app.state, "update_monitor", None)
+    update_applier = getattr(request.app.state, "update_applier", None)
     scheduler = getattr(request.app.state, "collector_scheduler", None)
 
     if update_monitor is None:
@@ -70,4 +71,17 @@ def system_overview(
         },
         "scheduler": scheduler.status() if scheduler else {"enabled": False, "running": False, "jobs": []},
         "update_status": update_status,
+        "update_apply": update_applier.status() if update_applier else {"enabled": False, "state": "unavailable"},
     }
+
+
+@router.post("/system/apply-update")
+def system_apply_update(request: Request) -> dict[str, object]:
+    update_applier = getattr(request.app.state, "update_applier", None)
+    if update_applier is None:
+        return {
+            "enabled": False,
+            "state": "unavailable",
+            "last_error": "Update apply service is not available.",
+        }
+    return update_applier.apply()

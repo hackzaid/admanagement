@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 
-import { UpdateStatus, getUpdateStatus } from "@/lib/api";
+import { UpdateStatus, applySystemUpdate, getUpdateStatus } from "@/lib/api";
 import { getReportDefinitionByPath, menuEntries } from "@/lib/navigation";
 
 const primaryNav = [
@@ -47,6 +47,7 @@ export function AppShell({
   const [navOpen, setNavOpen] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [updateChecking, setUpdateChecking] = useState(false);
+  const [updateApplying, setUpdateApplying] = useState(false);
 
   useEffect(() => {
     setOpenGroups(defaultOpenGroups);
@@ -83,6 +84,15 @@ export function AppShell({
       setUpdateStatus(result);
     } finally {
       setUpdateChecking(false);
+    }
+  };
+
+  const applyUpdate = async () => {
+    setUpdateApplying(true);
+    try {
+      await applySystemUpdate();
+    } finally {
+      setUpdateApplying(false);
     }
   };
 
@@ -198,6 +208,9 @@ export function AppShell({
               ) : null}
             </div>
             <div className="update-banner-actions">
+              <button className="hero-pill" onClick={() => void applyUpdate()} type="button">
+                {updateApplying ? "Starting update..." : "Apply update"}
+              </button>
               {updateStatus.latest_release_url ? (
                 <a className="hero-pill" href={updateStatus.latest_release_url} rel="noreferrer" target="_blank">
                   View release

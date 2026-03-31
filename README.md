@@ -309,6 +309,9 @@ Relevant settings:
 - `ADMANAGEMENT_UPDATE_GITHUB_TOKEN`
 - `ADMANAGEMENT_UPDATE_DEPLOY_MODE`
 - `ADMANAGEMENT_BUILD_COMMIT`
+- `ADMANAGEMENT_UPDATE_APPLY_ENABLED`
+- `ADMANAGEMENT_UPDATE_HOST_PROJECT_PATH`
+- `ADMANAGEMENT_UPDATE_RUNNER_IMAGE`
 
 Current behavior:
 
@@ -318,6 +321,13 @@ Current behavior:
 - the frontend shell performs an initial check on load and shows a banner when a newer build is available
 - the user can trigger `Check updates` manually at any time
 - the banner shows the latest release or commit link and upgrade steps appropriate to the deployment mode
+
+In-app apply:
+
+- the production backend can optionally launch an isolated update runner container
+- this requires the backend service to have access to the host project path and `/var/run/docker.sock`
+- the default production Compose file wires those mounts and enables the feature
+- `Apply update` rebuilds and restarts `backend` and `frontend` from inside the app without requiring a CLI session
 
 This is intentionally a user-confirmed update path. The system does not silently self-update.
 

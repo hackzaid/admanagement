@@ -8,6 +8,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
+    docker-compose \
+    git \
     libpango-1.0-0 \
     libcairo2 \
     libgdk-pixbuf-2.0-0 \

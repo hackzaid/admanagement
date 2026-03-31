@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     update_github_token: SecretStr = SecretStr("")
     update_deploy_mode: str = "docker-compose"
     build_commit: str = ""
+    update_apply_enabled: bool = False
+    update_host_project_path: str = "/host/app"
+    update_runner_image: str = "admanagement-backend"
 
 
 @lru_cache

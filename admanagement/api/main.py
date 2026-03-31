@@ -18,6 +18,7 @@ from admanagement.api.routes.web import router as web_router
 from admanagement import __version__
 from admanagement.core.config import get_settings
 from admanagement.db.bootstrap import init_db
+from admanagement.services.update_applier import UpdateApplier
 from admanagement.services.scheduler import CollectorScheduler
 from admanagement.services.update_monitor import UpdateMonitor
 
@@ -29,7 +30,9 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     init_db()
     update_monitor = UpdateMonitor(settings)
+    update_applier = UpdateApplier(settings)
     app.state.update_monitor = update_monitor
+    app.state.update_applier = update_applier
     scheduler = CollectorScheduler(settings, update_monitor=update_monitor)
     app.state.collector_scheduler = scheduler
     if settings.scheduler_enabled:
