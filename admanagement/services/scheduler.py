@@ -12,14 +12,16 @@ from admanagement.collectors.event_ingestor import EventIngestor
 from admanagement.collectors.ldap_collector import LdapCollector
 from admanagement.collectors.logon_ingestor import LogonIngestor
 from admanagement.core.config import Settings
+from admanagement.services.update_monitor import UpdateMonitor
 
 
 logger = logging.getLogger(__name__)
 
 
 class CollectorScheduler:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, update_monitor: UpdateMonitor | None = None) -> None:
         self.settings = settings
+        self.update_monitor = update_monitor
         self._scheduler = BackgroundScheduler(timezone=timezone.utc)
         self._lock = Lock()
         self._run_lock = Lock()
@@ -56,6 +58,16 @@ class CollectorScheduler:
             coalesce=True,
             next_run_time=datetime.now(timezone.utc),
         )
+        if self.settings.update_check_enabled and self.update_monitor is not None:
+            self._scheduler.add_job(
+                self._run_update_check,
+                trigger=IntervalTrigger(minutes=self.settings.update_check_interval_minutes),
+                id="update_check",
+                replace_existing=True,
+                max_instances=1,
+                coalesce=True,
+                next_run_time=datetime.now(timezone.utc),
+            )
         self._scheduler.start()
 
     def shutdown(self) -> None:
@@ -108,6 +120,10 @@ class CollectorScheduler:
         with self._run_lock:
             return self._execute_logon_poll()
 
+    def _run_update_check(self) -> dict[str, Any]:
+        with self._run_lock:
+            return self._execute_update_check()
+
     def _execute_ldap_snapshot(self) -> dict[str, Any]:
         try:
             result = LdapCollector(self.settings).run_snapshot()
@@ -138,6 +154,21 @@ class CollectorScheduler:
             logger.exception("Scheduled logon poll failed")
             result = {"error": str(exc), "timestamp_utc": datetime.now(timezone.utc).isoformat()}
             self._store_result("logon_poll", result)
+        return result
+
+    def _execute_update_check(self) -> dict[str, Any]:
+        if self.update_monitor is None:
+            result = {"status": "disabled", "error": "Update monitor is not configured.", "checked_at_utc": datetime.now(timezone.utc).isoformat()}
+            self._store_result("update_check", result)
+            return result
+
+        try:
+            result = self.update_monitor.refresh()
+            self._store_result("update_check", result)
+        except Exception as exc:
+            logger.exception("Scheduled update check failed")
+            result = {"status": "error", "error": str(exc), "checked_at_utc": datetime.now(timezone.utc).isoformat()}
+            self._store_result("update_check", result)
         return result
 
     def _store_result(self, job_id: str, result: dict[str, Any]) -> None:

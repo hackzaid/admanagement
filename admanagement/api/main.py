@@ -13,10 +13,13 @@ from admanagement.api.routes.logons import router as logons_router
 from admanagement.api.routes.reports import router as reports_router
 from admanagement.api.routes.snapshots import router as snapshots_router
 from admanagement.api.routes.setup import router as setup_router
+from admanagement.api.routes.system import router as system_router
 from admanagement.api.routes.web import router as web_router
+from admanagement import __version__
 from admanagement.core.config import get_settings
 from admanagement.db.bootstrap import init_db
 from admanagement.services.scheduler import CollectorScheduler
+from admanagement.services.update_monitor import UpdateMonitor
 
 
 settings = get_settings()
@@ -25,7 +28,9 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    scheduler = CollectorScheduler(settings)
+    update_monitor = UpdateMonitor(settings)
+    app.state.update_monitor = update_monitor
+    scheduler = CollectorScheduler(settings, update_monitor=update_monitor)
     app.state.collector_scheduler = scheduler
     if settings.scheduler_enabled:
         scheduler.start()
@@ -38,7 +43,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     debug=settings.debug,
-    version="0.1.0",
+    version=__version__,
     lifespan=lifespan,
 )
 
@@ -59,3 +64,4 @@ app.include_router(snapshots_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(setup_router, prefix="/api")
+app.include_router(system_router, prefix="/api")

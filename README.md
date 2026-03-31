@@ -287,6 +287,29 @@ Relevant settings include:
 
 The overview dashboard also exposes a `Run now` action so an administrator can force an immediate pull of recent AD activity and authentication logs without waiting for the next scheduled interval.
 
+## Release Update Checks
+
+The platform can check GitHub for newer releases and notify administrators in the web console.
+
+Relevant settings:
+
+- `ADMANAGEMENT_UPDATE_CHECK_ENABLED`
+- `ADMANAGEMENT_UPDATE_CHECK_INTERVAL_MINUTES`
+- `ADMANAGEMENT_UPDATE_REPOSITORY`
+- `ADMANAGEMENT_UPDATE_CHANNEL`
+- `ADMANAGEMENT_UPDATE_BRANCH`
+- `ADMANAGEMENT_UPDATE_GITHUB_TOKEN`
+- `ADMANAGEMENT_UPDATE_DEPLOY_MODE`
+
+Current behavior:
+
+- the backend checks the configured GitHub repository for the latest release
+- the frontend shell performs an initial check on load and shows a banner when a newer release is available
+- the user can trigger `Check updates` manually at any time
+- the banner shows the latest release link and upgrade steps appropriate to the deployment mode
+
+This is intentionally a user-confirmed update path. The system does not silently self-update.
+
 ## Data Flow
 
 1. LDAP collector snapshots directory state

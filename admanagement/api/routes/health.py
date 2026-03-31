@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from admanagement import __version__
 from admanagement.core.config import get_settings
 
 
@@ -13,4 +14,5 @@ def health() -> dict[str, str]:
         "status": "ok",
         "app": settings.app_name,
         "environment": settings.environment,
+        "version": __version__,
     }

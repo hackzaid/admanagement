@@ -61,6 +61,13 @@ class Settings(BaseSettings):
     logon_poll_interval_minutes: int = 5
     dashboard_recent_activity_limit: int = 20
     frontend_origins: list[str] = Field(default_factory=lambda: ["http://127.0.0.1:3000", "http://localhost:3000"])
+    update_check_enabled: bool = True
+    update_check_interval_minutes: int = 360
+    update_repository: str = "hackzaid/admanagement"
+    update_channel: str = "releases"
+    update_branch: str = "main"
+    update_github_token: SecretStr = SecretStr("")
+    update_deploy_mode: str = "docker-compose"
 
 
 @lru_cache

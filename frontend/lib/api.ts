@@ -35,6 +35,41 @@ export type SchedulerStatus = {
   }>;
 };
 
+export type UpdateStatus = {
+  status: string;
+  current_version: string;
+  repository?: string | null;
+  channel?: string | null;
+  branch?: string | null;
+  checked_at_utc?: string | null;
+  latest_version?: string | null;
+  latest_release_name?: string | null;
+  latest_release_url?: string | null;
+  latest_published_at_utc?: string | null;
+  release_notes_excerpt?: string | null;
+  update_available: boolean;
+  upgrade_instructions?: string[];
+  error?: string | null;
+};
+
+export type SystemOverview = {
+  health: {
+    status: string;
+    app: string;
+    environment: string;
+    version: string;
+  };
+  deployment: {
+    repository?: string | null;
+    channel?: string | null;
+    branch?: string | null;
+    deploy_mode?: string | null;
+    scheduler_enabled: boolean;
+  };
+  scheduler: SchedulerStatus;
+  update_status: UpdateStatus;
+};
+
 export type DashboardRunNowResult = {
   triggered_at_utc?: string | null;
   include_snapshot: boolean;
@@ -332,6 +367,53 @@ export async function triggerDashboardRunNow(includeSnapshot = false): Promise<D
     undefined,
     { timeoutMs: 60000 },
   );
+}
+
+export async function getUpdateStatus(refresh = false): Promise<UpdateStatus> {
+  try {
+    return await fetchJson<UpdateStatus>(`/api/system/update-status${refresh ? "?refresh=true" : ""}`);
+  } catch {
+    return {
+      status: "unknown",
+      current_version: "0.1.0",
+      update_available: false,
+      error: "Update status is unavailable.",
+      upgrade_instructions: [],
+    };
+  }
+}
+
+export async function getSystemOverview(refresh = false): Promise<SystemOverview> {
+  try {
+    return await fetchJson<SystemOverview>(`/api/system/overview${refresh ? "?refresh=true" : ""}`);
+  } catch {
+    return {
+      health: {
+        status: "unknown",
+        app: "admanagement",
+        environment: "unknown",
+        version: "0.1.0",
+      },
+      deployment: {
+        repository: null,
+        channel: null,
+        branch: null,
+        deploy_mode: null,
+        scheduler_enabled: false,
+      },
+      scheduler: {
+        enabled: false,
+        running: false,
+        jobs: [],
+      },
+      update_status: {
+        status: "unknown",
+        current_version: "0.1.0",
+        update_available: false,
+        error: "System overview is unavailable.",
+      },
+    };
+  }
 }
 
 export async function getDashboardOverviewFiltered(params?: {

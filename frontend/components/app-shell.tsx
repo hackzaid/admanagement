@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 
+import { UpdateStatus, getUpdateStatus } from "@/lib/api";
 import { getReportDefinitionByPath, menuEntries } from "@/lib/navigation";
 
 const primaryNav = [
@@ -12,6 +13,7 @@ const primaryNav = [
   { href: "/snapshots", label: "Compliance" },
   { href: "/reports/account-management/all-ad-changes", label: "Reports" },
   { href: "/configuration", label: "Configuration" },
+  { href: "/system", label: "System" },
 ];
 
 export function AppShell({
@@ -44,6 +46,8 @@ export function AppShell({
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(defaultOpenGroups);
   const [navOpen, setNavOpen] = useState(false);
   const [theme, setTheme] = useState<"linen" | "slate" | "signal">("slate");
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+  const [updateChecking, setUpdateChecking] = useState(false);
 
   useEffect(() => {
     setOpenGroups(defaultOpenGroups);
@@ -68,8 +72,32 @@ export function AppShell({
     window.localStorage.setItem("admanagement-theme", theme);
   }, [theme]);
 
+  useEffect(() => {
+    let active = true;
+
+    void getUpdateStatus().then((result) => {
+      if (active) {
+        setUpdateStatus(result);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const toggleGroup = (label: string) => {
     setOpenGroups((current) => ({ ...current, [label]: !current[label] }));
+  };
+
+  const refreshUpdateStatus = async () => {
+    setUpdateChecking(true);
+    try {
+      const result = await getUpdateStatus(true);
+      setUpdateStatus(result);
+    } finally {
+      setUpdateChecking(false);
+    }
   };
 
   return (
@@ -176,10 +204,41 @@ export function AppShell({
                 </button>
               ))}
             </div>
+            <button className="topbar-link" onClick={() => void refreshUpdateStatus()} type="button">
+              {updateChecking ? "Checking..." : "Check updates"}
+            </button>
             <div className="status-chip">Live Monitor</div>
             <div className="status-chip status-chip-muted">Multi-Domain Ready</div>
           </div>
         </header>
+
+        {updateStatus?.update_available ? (
+          <section className="update-banner">
+            <div className="update-banner-copy">
+              <strong>
+                Update available: v{updateStatus.latest_version}
+              </strong>
+              <span>
+                Current version v{updateStatus.current_version}
+                {updateStatus.latest_published_at_utc ? ` · Released ${new Date(updateStatus.latest_published_at_utc).toLocaleDateString()}` : ""}
+              </span>
+              {updateStatus.release_notes_excerpt ? <p>{updateStatus.release_notes_excerpt}</p> : null}
+              {updateStatus.upgrade_instructions?.length ? (
+                <code className="update-banner-command">{updateStatus.upgrade_instructions.join(" && ")}</code>
+              ) : null}
+            </div>
+            <div className="update-banner-actions">
+              {updateStatus.latest_release_url ? (
+                <a className="hero-pill" href={updateStatus.latest_release_url} rel="noreferrer" target="_blank">
+                  View release
+                </a>
+              ) : null}
+              <button className="hero-pill hero-pill-outline" onClick={() => void refreshUpdateStatus()} type="button">
+                Refresh
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         <main className="content">
           {heroMode === "default" ? (
