@@ -303,11 +303,28 @@ export type LogonQueryResult = {
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 
+function normalizeBrowserApiBaseUrl(configuredBaseUrl: string) {
+  if (typeof window === "undefined") {
+    return configuredBaseUrl;
+  }
+
+  try {
+    const parsed = new URL(configuredBaseUrl);
+    if (["localhost", "127.0.0.1", "0.0.0.0"].includes(parsed.hostname)) {
+      parsed.hostname = window.location.hostname;
+      return parsed.toString().replace(/\/$/, "");
+    }
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    return configuredBaseUrl;
+  }
+}
+
 function getApiBaseUrl() {
   if (typeof window === "undefined") {
     return process.env.INTERNAL_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
   }
-  return process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+  return normalizeBrowserApiBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL);
 }
 
 function describeNetworkError(error: unknown, apiBaseUrl: string, path: string) {

@@ -71,6 +71,8 @@ Default URLs:
 - Backend API: `http://localhost:8000`
 - Onboarding: `http://localhost:3000/onboarding`
 
+For network access, bind services to `0.0.0.0` but do not use `0.0.0.0` as the browser API target. The frontend will automatically replace `localhost`, `127.0.0.1`, or `0.0.0.0` in `NEXT_PUBLIC_API_BASE_URL` with the current server hostname or IP while keeping the configured backend port.
+
 If `3000` or `8000` are already in use on the host, either:
 
 - set `FRONTEND_PORT` and `BACKEND_PORT` in `.env` before startup, or
@@ -177,6 +179,12 @@ Typical areas you will configure:
 - scheduler intervals
 - report output path
 - frontend/backend host ports for Docker publishing when defaults conflict with another service
+
+For browser-based access from other machines:
+
+- keep the backend bound to `0.0.0.0`
+- allow the real frontend URL in `ADMANAGEMENT_FRONTEND_ORIGINS`
+- either set `NEXT_PUBLIC_API_BASE_URL` to the server IP/FQDN directly, or leave it as `http://localhost:<backend-port>` and let the frontend rewrite the hostname automatically in the browser
 
 Do not commit `.env` to source control.
 
