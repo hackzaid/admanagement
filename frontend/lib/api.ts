@@ -310,11 +310,28 @@ function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
 }
 
+function describeNetworkError(error: unknown, apiBaseUrl: string, path: string) {
+  const endpoint = `${apiBaseUrl}${path}`;
+  if (error instanceof DOMException && error.name === "TimeoutError") {
+    return `API request timed out while contacting ${endpoint}. Check whether the backend is running and reachable from the browser.`;
+  }
+  if (error instanceof Error) {
+    return `Could not reach the API at ${endpoint}. Check NEXT_PUBLIC_API_BASE_URL, backend port publishing, allowed frontend origins, and whether the backend is up. Browser error: ${error.message}`;
+  }
+  return `Could not reach the API at ${endpoint}. Check NEXT_PUBLIC_API_BASE_URL, backend connectivity, and allowed frontend origins.`;
+}
+
 async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    next: { revalidate: 30 },
-    signal: AbortSignal.timeout(5000),
-  });
+  const apiBaseUrl = getApiBaseUrl();
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      next: { revalidate: 30 },
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (error) {
+    throw new Error(describeNetworkError(error, apiBaseUrl, path));
+  }
 
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status} ${response.statusText}`);
@@ -330,13 +347,18 @@ async function writeJson<T>(
   options?: { timeoutMs?: number },
 ): Promise<T> {
   const apiBaseUrl = getApiBaseUrl();
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store",
-    signal: AbortSignal.timeout(options?.timeoutMs ?? 10000),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store",
+      signal: AbortSignal.timeout(options?.timeoutMs ?? 10000),
+    });
+  } catch (error) {
+    throw new Error(describeNetworkError(error, apiBaseUrl, path));
+  }
 
   if (!response.ok) {
     let detail = `${response.status} ${response.statusText}`;
