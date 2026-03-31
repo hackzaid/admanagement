@@ -1,0 +1,11 @@
+.git
+.next
+node_modules
+frontend/.next
+frontend/node_modules
+venv
+__pycache__
+*.pyc
+admanagement-data
+tests
+.env

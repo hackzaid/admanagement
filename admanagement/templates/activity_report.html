@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>AD Activity Report</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; color: #1f2933; margin: 24px; }
+    h1, h2 { color: #102a43; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border: 1px solid #d9e2ec; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f0f4f8; }
+    tbody tr:nth-child(even) { background: #f8fbff; }
+  </style>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+  <p>{{ summary }}</p>
+  <h2>Rows</h2>
+  <table>
+    <thead>
+      <tr>
+        {% for header in headers %}
+        <th>{{ header }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        {% for cell in row %}
+        <td>{{ cell }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

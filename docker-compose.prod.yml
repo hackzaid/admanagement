@@ -1,0 +1,69 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-admanagement}
+      POSTGRES_USER: ${POSTGRES_USER:-admanagement}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admanagement}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admanagement} -d ${POSTGRES_DB:-admanagement}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      ADMANAGEMENT_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-admanagement}:${POSTGRES_PASSWORD:-admanagement}@postgres:5432/${POSTGRES_DB:-admanagement}
+      ADMANAGEMENT_REDIS_URL: redis://redis:6379/0
+      ADMANAGEMENT_FRONTEND_ORIGINS: ${ADMANAGEMENT_FRONTEND_ORIGINS:-["http://localhost:3000","http://127.0.0.1:3000"]}
+      ADMANAGEMENT_LDAP_SERVER: ${ADMANAGEMENT_LDAP_SERVER:-}
+      ADMANAGEMENT_LDAP_BIND_DN: ${ADMANAGEMENT_LDAP_BIND_DN:-}
+      ADMANAGEMENT_LDAP_BIND_PASSWORD: ${ADMANAGEMENT_LDAP_BIND_PASSWORD:-}
+      ADMANAGEMENT_LDAP_BASE_DN: ${ADMANAGEMENT_LDAP_BASE_DN:-}
+      ADMANAGEMENT_EVENT_DC_LIST: ${ADMANAGEMENT_EVENT_DC_LIST:-[]}
+      ADMANAGEMENT_WINRM_USERNAME: ${ADMANAGEMENT_WINRM_USERNAME:-}
+      ADMANAGEMENT_WINRM_DOMAIN: ${ADMANAGEMENT_WINRM_DOMAIN:-}
+      ADMANAGEMENT_WINRM_PASSWORD: ${ADMANAGEMENT_WINRM_PASSWORD:-}
+      ADMANAGEMENT_WINRM_AUTH: ${ADMANAGEMENT_WINRM_AUTH:-ntlm}
+      ADMANAGEMENT_WINRM_USE_SSL: ${ADMANAGEMENT_WINRM_USE_SSL:-true}
+      ADMANAGEMENT_WINRM_PORT: ${ADMANAGEMENT_WINRM_PORT:-5986}
+      ADMANAGEMENT_WINRM_SERVER_CERT_VALIDATION: ${ADMANAGEMENT_WINRM_SERVER_CERT_VALIDATION:-ignore}
+      ADMANAGEMENT_SCHEDULER_ENABLED: ${ADMANAGEMENT_SCHEDULER_ENABLED:-true}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+        INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://backend:8000}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+      INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://backend:8000}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+
+volumes:
+  postgres-data:

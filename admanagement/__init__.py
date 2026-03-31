@@ -1,0 +1,1 @@
+"""admanagement application package."""
