@@ -45,7 +45,6 @@ export function AppShell({
   );
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(defaultOpenGroups);
   const [navOpen, setNavOpen] = useState(false);
-  const [theme, setTheme] = useState<"linen" | "slate" | "signal">("slate");
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [updateChecking, setUpdateChecking] = useState(false);
 
@@ -58,22 +57,9 @@ export function AppShell({
   }, [pathname]);
 
   useEffect(() => {
-    const storedTheme = window.localStorage.getItem("admanagement-theme");
-    const nextTheme =
-      storedTheme === "slate" || storedTheme === "signal" || storedTheme === "linen"
-        ? storedTheme
-        : "slate";
-    setTheme(nextTheme);
-    document.documentElement.dataset.theme = nextTheme;
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("admanagement-theme", theme);
-  }, [theme]);
-
-  useEffect(() => {
     let active = true;
+
+    document.documentElement.dataset.theme = "slate";
 
     void getUpdateStatus().then((result) => {
       if (active) {
@@ -173,7 +159,7 @@ export function AppShell({
               onClick={() => setNavOpen((current) => !current)}
               type="button"
             >
-              ≡
+              Menu
             </button>
             <div className="topbar-links">
               {primaryNav.map((item) => (
@@ -188,22 +174,6 @@ export function AppShell({
             </div>
           </div>
           <div className="topbar-actions">
-            <div className="theme-switcher" role="group" aria-label="Theme">
-              {[
-                { key: "linen", label: "Linen" },
-                { key: "slate", label: "Slate" },
-                { key: "signal", label: "Signal" },
-              ].map((item) => (
-                <button
-                  className={`theme-chip${theme === item.key ? " theme-chip-active" : ""}`}
-                  key={item.key}
-                  onClick={() => setTheme(item.key as "linen" | "slate" | "signal")}
-                  type="button"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
             <button className="topbar-link" onClick={() => void refreshUpdateStatus()} type="button">
               {updateChecking ? "Checking..." : "Check updates"}
             </button>
@@ -220,7 +190,7 @@ export function AppShell({
               </strong>
               <span>
                 Current build {updateStatus.current_ref?.slice(0, 7) ?? `v${updateStatus.current_version}`}
-                {updateStatus.latest_published_at_utc ? ` · Released ${new Date(updateStatus.latest_published_at_utc).toLocaleDateString()}` : ""}
+                {updateStatus.latest_published_at_utc ? ` | Released ${new Date(updateStatus.latest_published_at_utc).toLocaleDateString()}` : ""}
               </span>
               {updateStatus.release_notes_excerpt ? <p>{updateStatus.release_notes_excerpt}</p> : null}
               {updateStatus.upgrade_instructions?.length ? (

@@ -1,36 +1,4 @@
 :root {
-  --bg: #f3f1eb;
-  --bg-secondary: #ebe8df;
-  --surface: #ffffff;
-  --surface-soft: #f8f6f1;
-  --surface-accent: #eef7f4;
-  --line: #ddd8cb;
-  --line-strong: #c8c1b0;
-  --text: #182129;
-  --muted: #667066;
-  --accent: #0a8f78;
-  --accent-soft: #dbf2ec;
-  --accent-ink: #0c5a4e;
-  --highlight: #c9791f;
-  --highlight-soft: #fff0da;
-  --info: #2367c9;
-  --info-soft: #e7f0ff;
-  --danger: #b84d48;
-  --danger-soft: #fde9e7;
-  --shadow: 0 12px 28px rgba(24, 33, 41, 0.06);
-  --shell-gradient-start: #f7f3eb;
-  --shell-gradient-mid: #f2ede4;
-  --shell-gradient-end: #ece6db;
-  --rail-gradient-start: #f5f2ea;
-  --rail-gradient-end: #ece7db;
-  --topbar-bg: rgba(250, 248, 242, 0.92);
-  --surface-muted: rgba(255, 255, 255, 0.5);
-  --surface-muted-hover: rgba(255, 255, 255, 0.45);
-  --widget-fill-start: #87baf8;
-  --widget-fill-end: #4f88cb;
-}
-
-:root[data-theme="slate"] {
   --bg: #dfe6ef;
   --bg-secondary: #ced7e3;
   --surface: #ffffff;
@@ -60,38 +28,6 @@
   --surface-muted-hover: rgba(255, 255, 255, 0.7);
   --widget-fill-start: #79b2f4;
   --widget-fill-end: #2f71c8;
-}
-
-:root[data-theme="signal"] {
-  --bg: #f5f0ea;
-  --bg-secondary: #eadfd4;
-  --surface: #fffdf8;
-  --surface-soft: #faf5ee;
-  --surface-accent: #fff3e0;
-  --line: #dfd0c3;
-  --line-strong: #ceb8a6;
-  --text: #261f18;
-  --muted: #726457;
-  --accent: #af4f2c;
-  --accent-soft: #f8e2d8;
-  --accent-ink: #7a3318;
-  --highlight: #d39b20;
-  --highlight-soft: #fff2cc;
-  --info: #3668ba;
-  --info-soft: #e8f0ff;
-  --danger: #bb4d3d;
-  --danger-soft: #fde6e2;
-  --shadow: 0 14px 28px rgba(38, 31, 24, 0.08);
-  --shell-gradient-start: #fbf5ee;
-  --shell-gradient-mid: #f5ecdf;
-  --shell-gradient-end: #ecdccc;
-  --rail-gradient-start: #f9f1e8;
-  --rail-gradient-end: #ecd9ca;
-  --topbar-bg: rgba(254, 250, 245, 0.94);
-  --surface-muted: rgba(255, 253, 248, 0.72);
-  --surface-muted-hover: rgba(255, 253, 248, 0.86);
-  --widget-fill-start: #f0b06c;
-  --widget-fill-end: #ca6a32;
 }
 
 * {
@@ -358,31 +294,6 @@ a {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-}
-
-.theme-switcher {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-}
-
-.theme-chip {
-  padding: 8px 10px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  cursor: pointer;
-}
-
-.theme-chip-active {
-  background: var(--surface-soft);
-  color: var(--text);
-  box-shadow: inset 0 -2px 0 var(--accent);
-  font-weight: 700;
 }
 
 .topbar-link,
@@ -2000,11 +1911,6 @@ a {
 
   .dashboard-save-row {
     flex-wrap: wrap;
-  }
-
-  .theme-switcher {
-    width: 100%;
-    justify-content: space-between;
   }
 
   .config-hub-nav,
