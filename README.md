@@ -71,6 +71,11 @@ Default URLs:
 - Backend API: `http://localhost:8000`
 - Onboarding: `http://localhost:3000/onboarding`
 
+If `3000` or `8000` are already in use on the host, either:
+
+- set `FRONTEND_PORT` and `BACKEND_PORT` in `.env` before startup, or
+- use `./scripts/install-ubuntu.sh`, which will detect busy ports, choose the next available host ports, and update `.env` automatically
+
 ### Ubuntu Bootstrap
 
 An Ubuntu helper is included:
@@ -80,6 +85,29 @@ An Ubuntu helper is included:
 ```
 
 Use this when preparing a dedicated Linux host for the product. Docker and the Docker Compose plugin should already be present unless your internal packaging process installs them separately.
+
+The installer also:
+
+- creates `.env` from `.env.example` if needed
+- checks whether the requested frontend/backend host ports are already occupied
+- automatically selects the next available ports if necessary
+- updates `NEXT_PUBLIC_API_BASE_URL` and allowed frontend origins to match the selected ports
+
+### Windows Docker Startup
+
+For Windows hosts using Docker Desktop, use:
+
+```powershell
+.\Start-Prod.ps1
+```
+
+This script:
+
+- creates `.env` from `.env.example` if needed
+- checks whether `BACKEND_PORT` and `FRONTEND_PORT` are already occupied
+- selects the next available ports automatically when there is a conflict
+- updates the frontend API URL and allowed frontend origins to match the selected ports
+- starts the production Compose stack
 
 ### Local Development
 
@@ -148,6 +176,7 @@ Typical areas you will configure:
 - WinRM defaults
 - scheduler intervals
 - report output path
+- frontend/backend host ports for Docker publishing when defaults conflict with another service
 
 Do not commit `.env` to source control.
 
