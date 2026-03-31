@@ -116,7 +116,9 @@ export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOv
   const updateStatus = overview.update_status;
   const releaseRows: Array<[string, string]> = [
     ["Current version", `v${overview.health.version}`],
+    ["Current build ref", updateStatus.current_ref?.slice(0, 12) || "Unknown"],
     ["Latest version", updateStatus.latest_version ? `v${updateStatus.latest_version}` : "No release metadata"],
+    ["Latest branch ref", updateStatus.latest_ref?.slice(0, 12) || "Unknown"],
     ["Last checked", formatDisplayDateTime(updateStatus.checked_at_utc, "Not checked yet")],
     ["Release published", formatDisplayDateTime(updateStatus.latest_published_at_utc, "No publish date")],
     ["Repository", overview.deployment.repository || "Not configured"],

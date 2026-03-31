@@ -64,10 +64,11 @@ class Settings(BaseSettings):
     update_check_enabled: bool = True
     update_check_interval_minutes: int = 360
     update_repository: str = "hackzaid/admanagement"
-    update_channel: str = "releases"
+    update_channel: str = "branch"
     update_branch: str = "main"
     update_github_token: SecretStr = SecretStr("")
     update_deploy_mode: str = "docker-compose"
+    build_commit: str = ""
 
 
 @lru_cache

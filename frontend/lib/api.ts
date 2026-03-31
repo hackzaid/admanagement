@@ -38,10 +38,12 @@ export type SchedulerStatus = {
 export type UpdateStatus = {
   status: string;
   current_version: string;
+  current_ref?: string | null;
   repository?: string | null;
   channel?: string | null;
   branch?: string | null;
   checked_at_utc?: string | null;
+  latest_ref?: string | null;
   latest_version?: string | null;
   latest_release_name?: string | null;
   latest_release_url?: string | null;
@@ -415,6 +417,7 @@ export async function getUpdateStatus(refresh = false): Promise<UpdateStatus> {
     return {
       status: "unknown",
       current_version: "0.1.0",
+      current_ref: null,
       update_available: false,
       error: "Update status is unavailable.",
       upgrade_instructions: [],
@@ -448,6 +451,7 @@ export async function getSystemOverview(refresh = false): Promise<SystemOverview
       update_status: {
         status: "unknown",
         current_version: "0.1.0",
+        current_ref: null,
         update_available: false,
         error: "System overview is unavailable.",
       },

@@ -91,6 +91,16 @@ function Find-AvailablePort {
   throw "Unable to find a free port near $StartPort after $Attempts attempts."
 }
 
+function Get-GitCommit {
+  param([string]$RootPath)
+
+  try {
+    return (git -C $RootPath rev-parse HEAD).Trim()
+  } catch {
+    return ""
+  }
+}
+
 if (-not (Test-Path $envFile)) {
   Copy-Item -Path (Join-Path $root ".env.example") -Destination $envFile -Force
   Write-Host "Created .env from .env.example"
@@ -107,6 +117,12 @@ Set-EnvValue -Path $envFile -Key "BACKEND_PORT" -Value "$backendSelected"
 Set-EnvValue -Path $envFile -Key "FRONTEND_PORT" -Value "$frontendSelected"
 Set-EnvValue -Path $envFile -Key "NEXT_PUBLIC_API_BASE_URL" -Value "http://localhost:$backendSelected"
 Set-EnvValue -Path $envFile -Key "ADMANAGEMENT_FRONTEND_ORIGINS" -Value "[`"http://127.0.0.1:$frontendSelected`",`"http://localhost:$frontendSelected`"]"
+Set-EnvValue -Path $envFile -Key "ADMANAGEMENT_UPDATE_CHANNEL" -Value "branch"
+
+$gitCommit = Get-GitCommit -RootPath $root
+if ($gitCommit) {
+  Set-EnvValue -Path $envFile -Key "ADMANAGEMENT_BUILD_COMMIT" -Value $gitCommit
+}
 
 if ($backendPreferred -ne $backendSelected) {
   Write-Host "Backend port $backendPreferred is busy. Using $backendSelected instead."

@@ -297,7 +297,7 @@ The overview dashboard also exposes a `Run now` action so an administrator can f
 
 ## Release Update Checks
 
-The platform can check GitHub for newer releases and notify administrators in the web console.
+The platform can check GitHub for newer builds and notify administrators in the web console.
 
 Relevant settings:
 
@@ -308,13 +308,16 @@ Relevant settings:
 - `ADMANAGEMENT_UPDATE_BRANCH`
 - `ADMANAGEMENT_UPDATE_GITHUB_TOKEN`
 - `ADMANAGEMENT_UPDATE_DEPLOY_MODE`
+- `ADMANAGEMENT_BUILD_COMMIT`
 
 Current behavior:
 
-- the backend checks the configured GitHub repository for the latest release
-- the frontend shell performs an initial check on load and shows a banner when a newer release is available
+- the backend checks the configured GitHub repository for the latest release or branch head, depending on `ADMANAGEMENT_UPDATE_CHANNEL`
+- `branch` mode compares the deployed commit with the latest remote commit on `ADMANAGEMENT_UPDATE_BRANCH`
+- the deployment scripts stamp `ADMANAGEMENT_BUILD_COMMIT` into `.env` when git metadata is available
+- the frontend shell performs an initial check on load and shows a banner when a newer build is available
 - the user can trigger `Check updates` manually at any time
-- the banner shows the latest release link and upgrade steps appropriate to the deployment mode
+- the banner shows the latest release or commit link and upgrade steps appropriate to the deployment mode
 
 This is intentionally a user-confirmed update path. The system does not silently self-update.
 

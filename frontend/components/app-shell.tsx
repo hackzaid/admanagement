@@ -216,10 +216,10 @@ export function AppShell({
           <section className="update-banner">
             <div className="update-banner-copy">
               <strong>
-                Update available: v{updateStatus.latest_version}
+                Update available: {updateStatus.latest_version ? `v${updateStatus.latest_version}` : updateStatus.latest_ref?.slice(0, 7) ?? "new build"}
               </strong>
               <span>
-                Current version v{updateStatus.current_version}
+                Current build {updateStatus.current_ref?.slice(0, 7) ?? `v${updateStatus.current_version}`}
                 {updateStatus.latest_published_at_utc ? ` · Released ${new Date(updateStatus.latest_published_at_utc).toLocaleDateString()}` : ""}
               </span>
               {updateStatus.release_notes_excerpt ? <p>{updateStatus.release_notes_excerpt}</p> : null}

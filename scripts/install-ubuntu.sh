@@ -28,6 +28,12 @@ set_env_value() {
   fi
 }
 
+get_git_commit() {
+  if command -v git >/dev/null 2>&1; then
+    git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || true
+  fi
+}
+
 is_port_in_use() {
   local port="$1"
 
@@ -98,6 +104,12 @@ set_env_value "BACKEND_PORT" "$BACKEND_PORT_SELECTED"
 set_env_value "FRONTEND_PORT" "$FRONTEND_PORT_SELECTED"
 set_env_value "NEXT_PUBLIC_API_BASE_URL" "http://localhost:${BACKEND_PORT_SELECTED}"
 set_env_value "ADMANAGEMENT_FRONTEND_ORIGINS" "[\"http://127.0.0.1:${FRONTEND_PORT_SELECTED}\",\"http://localhost:${FRONTEND_PORT_SELECTED}\"]"
+set_env_value "ADMANAGEMENT_UPDATE_CHANNEL" "branch"
+
+GIT_COMMIT_VALUE="$(get_git_commit)"
+if [[ -n "$GIT_COMMIT_VALUE" ]]; then
+  set_env_value "ADMANAGEMENT_BUILD_COMMIT" "$GIT_COMMIT_VALUE"
+fi
 
 if [[ "$BACKEND_PORT_SELECTED" != "$BACKEND_PORT_VALUE" ]]; then
   echo "Backend port $BACKEND_PORT_VALUE is in use. Using $BACKEND_PORT_SELECTED instead."
