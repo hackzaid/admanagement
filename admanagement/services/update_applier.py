@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import subprocess
 from datetime import datetime, timezone
 from threading import Lock
@@ -62,10 +63,19 @@ class UpdateApplier:
             return dict(self._status)
 
     def _start_runner(self) -> str:
+        docker_binary = shutil.which("docker")
+        if not docker_binary:
+            raise RuntimeError(
+                "This deployment cannot apply updates in-app yet because the running backend "
+                "image does not include the Docker CLI. Rebuild once from the host with "
+                "'sudo docker compose -f docker-compose.prod.yml up -d --build', then retry "
+                "future updates from inside the app."
+            )
+
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
         runner_name = f"admanagement-update-runner-{timestamp}"
         command = [
-            "docker",
+            docker_binary,
             "run",
             "--detach",
             "--rm",
