@@ -1,6 +1,7 @@
 """ORM models."""
 
 from admanagement.models.activity import AdminActivity
+from admanagement.models.auth_session import AuthSession
 from admanagement.models.checkpoint import EventCheckpoint
 from admanagement.models.configuration import (
     AlertRuleConfig,
@@ -18,6 +19,7 @@ from admanagement.models.snapshot import DirectorySnapshot
 __all__ = [
     "AdminActivity",
     "AlertRuleConfig",
+    "AuthSession",
     "AuditPolicyExpectation",
     "BusinessHoursConfig",
     "DirectorySnapshot",

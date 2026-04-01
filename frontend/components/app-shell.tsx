@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 
-import { UpdateStatus, applySystemUpdate, getUpdateStatus } from "@/lib/api";
+import { AuthSession, UpdateStatus, applySystemUpdate, getAuthSession, getUpdateStatus, logoutAuthSession } from "@/lib/api";
 import { getReportDefinitionByPath, menuEntries } from "@/lib/navigation";
 
 const primaryNav = [
@@ -48,6 +48,7 @@ export function AppShell({
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [updateChecking, setUpdateChecking] = useState(false);
   const [updateApplying, setUpdateApplying] = useState(false);
+  const [session, setSession] = useState<AuthSession | null>(null);
 
   useEffect(() => {
     setOpenGroups(defaultOpenGroups);
@@ -65,6 +66,15 @@ export function AppShell({
     void getUpdateStatus().then((result) => {
       if (active) {
         setUpdateStatus(result);
+      }
+    });
+    void getAuthSession().then((result) => {
+      if (active) {
+        setSession(result);
+      }
+    }).catch(() => {
+      if (active) {
+        setSession(null);
       }
     });
 
@@ -93,6 +103,15 @@ export function AppShell({
       await applySystemUpdate();
     } finally {
       setUpdateApplying(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await logoutAuthSession();
+    } finally {
+      document.cookie = "admanagement_session=; Path=/; Max-Age=0; SameSite=Lax";
+      window.location.href = "/login";
     }
   };
 
@@ -184,8 +203,12 @@ export function AppShell({
             </div>
           </div>
           <div className="topbar-actions">
+            {session ? <div className="status-chip">{session.display_name || session.username}</div> : null}
             <button className="topbar-link" onClick={() => void refreshUpdateStatus()} type="button">
               {updateChecking ? "Checking..." : "Check updates"}
+            </button>
+            <button className="topbar-link" onClick={() => void logout()} type="button">
+              Sign out
             </button>
             <div className="status-chip">Live Monitor</div>
             <div className="status-chip status-chip-muted">Multi-Domain Ready</div>

@@ -120,6 +120,13 @@ export type SetupStatus = {
   };
 };
 
+export type AuthSession = {
+  username: string;
+  display_name: string;
+  distinguished_name?: string | null;
+  expires_at_utc: string;
+};
+
 export type DashboardOverview = {
   snapshot_summary: SnapshotSummary;
   activity_summary: MetricSummary;
@@ -340,6 +347,39 @@ function getApiBaseUrl() {
   return normalizeBrowserApiBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL);
 }
 
+function getClientSessionToken() {
+  if (typeof document === "undefined") {
+    return "";
+  }
+  const cookie = document.cookie
+    .split("; ")
+    .find((item) => item.startsWith("admanagement_session="));
+  return cookie ? decodeURIComponent(cookie.split("=", 2)[1] ?? "") : "";
+}
+
+async function getRequestHeaders(body?: unknown) {
+  const headers: Record<string, string> = {};
+  if (body) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  if (typeof window === "undefined") {
+    const { cookies } = await import("next/headers");
+    const store = await cookies();
+    const token = store.get("admanagement_session")?.value;
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
+  const token = getClientSessionToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 function describeNetworkError(error: unknown, apiBaseUrl: string, path: string) {
   const endpoint = `${apiBaseUrl}${path}`;
   if (error instanceof DOMException && error.name === "TimeoutError") {
@@ -353,9 +393,11 @@ function describeNetworkError(error: unknown, apiBaseUrl: string, path: string) 
 
 async function fetchJson<T>(path: string): Promise<T> {
   const apiBaseUrl = getApiBaseUrl();
+  const headers = await getRequestHeaders();
   let response: Response;
   try {
     response = await fetch(`${apiBaseUrl}${path}`, {
+      headers,
       next: { revalidate: 30 },
       signal: AbortSignal.timeout(5000),
     });
@@ -377,11 +419,12 @@ async function writeJson<T>(
   options?: { timeoutMs?: number },
 ): Promise<T> {
   const apiBaseUrl = getApiBaseUrl();
+  const headers = await getRequestHeaders(body);
   let response: Response;
   try {
     response = await fetch(`${apiBaseUrl}${path}`, {
       method,
-      headers: body ? { "Content-Type": "application/json" } : undefined,
+      headers: Object.keys(headers).length ? headers : undefined,
       body: body ? JSON.stringify(body) : undefined,
       cache: "no-store",
       signal: AbortSignal.timeout(options?.timeoutMs ?? 10000),
@@ -958,6 +1001,23 @@ export async function bootstrapSetup(payload: {
   working_days: string[];
 }) {
   return writeJson<SetupStatus>("/api/setup/bootstrap", "POST", payload, { timeoutMs: 60000 });
+}
+
+export async function loginWithAd(payload: { username: string; password: string }) {
+  return writeJson<{ token: string; username: string; display_name: string; expires_at_utc: string }>(
+    "/api/auth/login",
+    "POST",
+    payload,
+    { timeoutMs: 30000 },
+  );
+}
+
+export async function getAuthSession() {
+  return fetchJson<AuthSession>("/api/auth/session");
+}
+
+export async function logoutAuthSession() {
+  return writeJson<{ ok: boolean }>("/api/auth/logout", "POST");
 }
 
 export async function testSetupLdap(payload: {

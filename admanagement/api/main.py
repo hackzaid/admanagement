@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from admanagement.api.routes.activity import router as activity_router
+from admanagement.api.routes.auth import router as auth_router
 from admanagement.api.routes.configuration import router as configuration_router
 from admanagement.api.routes.dashboard import router as dashboard_router
 from admanagement.api.routes.health import router as health_router
@@ -18,6 +20,7 @@ from admanagement.api.routes.web import router as web_router
 from admanagement import __version__
 from admanagement.core.config import get_settings
 from admanagement.db.bootstrap import init_db
+from admanagement.services.auth_service import AuthService
 from admanagement.services.update_applier import UpdateApplier
 from admanagement.services.scheduler import CollectorScheduler
 from admanagement.services.update_monitor import UpdateMonitor
@@ -58,8 +61,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def require_authentication(request: Request, call_next):
+    path = request.url.path
+    if not path.startswith("/api"):
+        return await call_next(request)
+
+    public_prefixes = ("/api/health", "/api/setup", "/api/auth")
+    if path.startswith(public_prefixes):
+        return await call_next(request)
+
+    authorization = request.headers.get("authorization", "")
+    token = ""
+    if authorization.lower().startswith("bearer "):
+        token = authorization.split(" ", 1)[1].strip()
+    if not token:
+        token = request.headers.get("x-ad-session", "").strip()
+
+    session = AuthService(settings).get_session(token)
+    if session is None:
+        return JSONResponse(status_code=401, content={"detail": "Authentication required."})
+
+    request.state.auth_session = session
+    return await call_next(request)
+
 app.include_router(web_router)
 app.include_router(health_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
 app.include_router(activity_router, prefix="/api")
 app.include_router(configuration_router, prefix="/api")
 app.include_router(logons_router, prefix="/api")

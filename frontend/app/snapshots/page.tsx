@@ -1,8 +1,10 @@
 import { AppShell } from "@/components/app-shell";
 import { SnapshotsWorkspace } from "@/components/snapshots/snapshots-workspace";
 import { getSnapshotRuns, getSnapshotSummary } from "@/lib/api";
+import { requireAuthOrRedirect } from "@/lib/auth";
 
 export default async function SnapshotsPage() {
+  await requireAuthOrRedirect();
   const summary = await getSnapshotSummary();
   const runs = await getSnapshotRuns();
 

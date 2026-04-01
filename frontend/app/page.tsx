@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { HomeDashboard } from "@/components/home-dashboard";
 import { getDashboardOverviewFiltered, getSavedDashboardViews, getSavedReports, getSetupStatus } from "@/lib/api";
+import { requireAuthOrRedirect } from "@/lib/auth";
 import { buildDashboardApiParams, buildFilterStateFromSearch } from "@/lib/dashboard-filters";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export default async function HomePage({
     end?: string;
   }>;
 }) {
+  await requireAuthOrRedirect();
   const resolvedSearchParams = await searchParams;
   const initialFilters = buildFilterStateFromSearch(resolvedSearchParams);
   const setupStatus = await getSetupStatus();
