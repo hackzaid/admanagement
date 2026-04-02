@@ -296,6 +296,13 @@ a {
   flex-wrap: wrap;
 }
 
+.topbar-statuses {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .topbar-link,
 .status-chip {
   padding: 9px 12px;
@@ -328,6 +335,40 @@ a {
   background: var(--highlight-soft);
   border-color: rgba(201, 121, 31, 0.16);
   color: #83511a;
+}
+
+.topbar-status-card {
+  min-width: 148px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 250, 253, 0.92));
+  display: grid;
+  gap: 3px;
+}
+
+.topbar-status-card strong {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #203140;
+}
+
+.topbar-status-card small {
+  font-size: 0.74rem;
+  color: var(--text-soft);
+}
+
+.topbar-status-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6d7b88;
+}
+
+.topbar-status-card-accent {
+  border-color: rgba(88, 135, 213, 0.24);
+  background: linear-gradient(180deg, rgba(229, 238, 253, 0.96), rgba(242, 246, 253, 0.94));
 }
 
 .content {
@@ -1866,6 +1907,10 @@ a {
     width: 100%;
   }
 
+  .topbar-statuses {
+    width: 100%;
+  }
+
   .topbar-links {
     overflow-x: auto;
     flex-wrap: nowrap;
@@ -1874,6 +1919,11 @@ a {
 
   .topbar-link {
     white-space: nowrap;
+  }
+
+  .topbar-status-card {
+    min-width: 0;
+    flex: 1 1 180px;
   }
 
   .card-grid-four,

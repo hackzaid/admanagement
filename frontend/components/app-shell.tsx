@@ -115,6 +115,16 @@ export function AppShell({
     }
   };
 
+  const buildStatusLabel = updateStatus?.update_available
+    ? "Update available"
+    : updateStatus?.status === "ok"
+      ? "Current"
+      : updateStatus?.status === "error"
+        ? "Check failed"
+        : "Pending";
+
+  const trackedBranchLabel = updateStatus?.branch || updateStatus?.channel || "Main branch";
+
   return (
     <div className={`shell${navOpen ? " shell-mobile-open" : ""}`}>
       <aside className={`side-rail${navOpen ? " side-rail-open" : ""}`}>
@@ -203,15 +213,31 @@ export function AppShell({
             </div>
           </div>
           <div className="topbar-actions">
-            {session ? <div className="status-chip">{session.display_name || session.username}</div> : null}
+            <div className="topbar-statuses">
+              {session ? (
+                <div className="topbar-status-card">
+                  <span className="topbar-status-label">Signed in</span>
+                  <strong>{session.display_name || session.username}</strong>
+                  <small>{session.username}</small>
+                </div>
+              ) : null}
+              <div className="topbar-status-card">
+                <span className="topbar-status-label">Tracking</span>
+                <strong>{trackedBranchLabel}</strong>
+                <small>{updateStatus?.repository ?? "Repository not configured"}</small>
+              </div>
+              <div className="topbar-status-card topbar-status-card-accent">
+                <span className="topbar-status-label">Build state</span>
+                <strong>{buildStatusLabel}</strong>
+                <small>{updateStatus?.current_ref?.slice(0, 7) ?? `v${updateStatus?.current_version ?? "0.1.0"}`}</small>
+              </div>
+            </div>
             <button className="topbar-link" onClick={() => void refreshUpdateStatus()} type="button">
               {updateChecking ? "Checking..." : "Check updates"}
             </button>
             <button className="topbar-link" onClick={() => void logout()} type="button">
               Sign out
             </button>
-            <div className="status-chip">Live Monitor</div>
-            <div className="status-chip status-chip-muted">Multi-Domain Ready</div>
           </div>
         </header>
 
