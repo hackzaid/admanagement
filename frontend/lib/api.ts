@@ -323,28 +323,16 @@ export type LogonQueryResult = {
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 
-function normalizeBrowserApiBaseUrl(configuredBaseUrl: string) {
-  if (typeof window === "undefined") {
-    return configuredBaseUrl;
-  }
-
-  try {
-    const parsed = new URL(configuredBaseUrl);
-    if (["localhost", "127.0.0.1", "0.0.0.0"].includes(parsed.hostname)) {
-      parsed.hostname = window.location.hostname;
-      return parsed.toString().replace(/\/$/, "");
-    }
-    return parsed.toString().replace(/\/$/, "");
-  } catch {
-    return configuredBaseUrl;
-  }
-}
-
 function getApiBaseUrl() {
   if (typeof window === "undefined") {
-    return process.env.INTERNAL_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+    return (process.env.INTERNAL_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL).replace(/\/$/, "");
   }
-  return normalizeBrowserApiBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL);
+  return "";
+}
+
+function buildApiUrl(path: string) {
+  const apiBaseUrl = getApiBaseUrl();
+  return apiBaseUrl ? `${apiBaseUrl}${path}` : path;
 }
 
 function getClientSessionToken() {
@@ -381,7 +369,11 @@ async function getRequestHeaders(body?: unknown) {
 }
 
 function describeNetworkError(error: unknown, apiBaseUrl: string, path: string) {
-  const endpoint = `${apiBaseUrl}${path}`;
+  const endpoint = apiBaseUrl
+    ? `${apiBaseUrl}${path}`
+    : typeof window !== "undefined"
+      ? `${window.location.origin}${path}`
+      : path;
   if (error instanceof DOMException && error.name === "TimeoutError") {
     return `API request timed out while contacting ${endpoint}. Check whether the backend is running and reachable from the browser.`;
   }
@@ -396,7 +388,7 @@ async function fetchJson<T>(path: string): Promise<T> {
   const headers = await getRequestHeaders();
   let response: Response;
   try {
-    response = await fetch(`${apiBaseUrl}${path}`, {
+    response = await fetch(buildApiUrl(path), {
       headers,
       next: { revalidate: 30 },
       signal: AbortSignal.timeout(5000),
@@ -422,7 +414,7 @@ async function writeJson<T>(
   const headers = await getRequestHeaders(body);
   let response: Response;
   try {
-    response = await fetch(`${apiBaseUrl}${path}`, {
+    response = await fetch(buildApiUrl(path), {
       method,
       headers: Object.keys(headers).length ? headers : undefined,
       body: body ? JSON.stringify(body) : undefined,
@@ -716,7 +708,7 @@ export function buildActivityExportUrl(params: {
   if (params.startTimeUtc) query.set("start_time_utc", params.startTimeUtc);
   if (params.endTimeUtc) query.set("end_time_utc", params.endTimeUtc);
   query.set("limit", String(params.limit ?? 5000));
-  return `${getApiBaseUrl()}/api/activity/export.csv?${query.toString()}`;
+  return `${buildApiUrl("/api/activity/export.csv")}?${query.toString()}`;
 }
 
 export async function getReportCatalog(): Promise<ReportCatalogItem[]> {
@@ -942,7 +934,7 @@ export function buildLogonExportUrl(params: {
   if (params.startTimeUtc) query.set("start_time_utc", params.startTimeUtc);
   if (params.endTimeUtc) query.set("end_time_utc", params.endTimeUtc);
   query.set("limit", String(params.limit ?? 5000));
-  return `${getApiBaseUrl()}/api/logons/export.csv?${query.toString()}`;
+  return `${buildApiUrl("/api/logons/export.csv")}?${query.toString()}`;
 }
 
 export async function getSetupStatus(): Promise<SetupStatus> {
