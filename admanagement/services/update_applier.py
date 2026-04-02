@@ -71,6 +71,13 @@ class UpdateApplier:
                 "'sudo docker compose -f docker-compose.prod.yml up -d --build', then retry "
                 "future updates from inside the app."
             )
+        if self.settings.update_host_project_path == "/host/app":
+            raise RuntimeError(
+                "In-app updates need the real host project path, but this deployment is still "
+                "using the placeholder '/host/app'. Set ADMANAGEMENT_UPDATE_HOST_PROJECT_PATH to "
+                "the actual host checkout path, then rebuild once. On Ubuntu, rerun "
+                "'./scripts/install-ubuntu.sh' from the project root or update .env manually."
+            )
 
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
         runner_name = f"admanagement-update-runner-{timestamp}"

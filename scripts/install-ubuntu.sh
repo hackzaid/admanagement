@@ -105,6 +105,7 @@ set_env_value "FRONTEND_PORT" "$FRONTEND_PORT_SELECTED"
 set_env_value "NEXT_PUBLIC_API_BASE_URL" "http://localhost:${BACKEND_PORT_SELECTED}"
 set_env_value "ADMANAGEMENT_FRONTEND_ORIGINS" "[\"http://127.0.0.1:${FRONTEND_PORT_SELECTED}\",\"http://localhost:${FRONTEND_PORT_SELECTED}\"]"
 set_env_value "ADMANAGEMENT_UPDATE_CHANNEL" "branch"
+set_env_value "ADMANAGEMENT_UPDATE_HOST_PROJECT_PATH" "$ROOT_DIR"
 
 GIT_COMMIT_VALUE="$(get_git_commit)"
 if [[ -n "$GIT_COMMIT_VALUE" ]]; then

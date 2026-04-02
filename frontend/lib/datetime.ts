@@ -1,35 +1,50 @@
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function parseDate(value: string) {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
 
-function isIsoLike(value: string) {
-  return /^\d{4}-\d{2}-\d{2}(?:[T\s]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,6})?)?(?:Z|[+-]\d{2}:\d{2})?)?$/.test(value);
+function getBrowserTimeZone() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
 export function formatDisplayDateTime(value?: string | null, fallback = "No data") {
-  if (!value) {
+  if (!value?.trim()) {
     return fallback;
   }
 
-  const trimmed = value.trim();
-  if (!trimmed) {
+  const parsed = parseDate(value.trim());
+  if (!parsed) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: getBrowserTimeZone(),
+  }).format(parsed);
+}
+
+export function formatDisplayDate(value?: string | null, fallback = "No data") {
+  if (!value?.trim()) {
     return fallback;
   }
-  if (!isIsoLike(trimmed)) {
-    return trimmed;
+
+  const parsed = parseDate(value.trim());
+  if (!parsed) {
+    return value;
   }
 
-  const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
-  if (!match) {
-    return trimmed;
-  }
-
-  const [, year, month, day, hour, minute] = match;
-  const monthIndex = Number.parseInt(month, 10) - 1;
-  const monthName = MONTHS[monthIndex] ?? month;
-  const datePart = `${day} ${monthName} ${year}`;
-
-  if (hour && minute) {
-    return `${datePart}, ${hour}:${minute}`;
-  }
-
-  return datePart;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: getBrowserTimeZone(),
+  }).format(parsed);
 }

@@ -326,8 +326,10 @@ In-app apply:
 
 - the production backend can optionally launch an isolated update runner container
 - this requires the backend service to have access to the host project path and `/var/run/docker.sock`
+- `ADMANAGEMENT_UPDATE_HOST_PROJECT_PATH` must be the real host checkout path, not `/host/app`
 - the backend image must include the `docker` CLI as well as `docker-compose`
-- the default production Compose file wires those mounts and enables the feature
+- `./scripts/install-ubuntu.sh` and `.\Start-Prod.ps1` stamp the host project path into `.env`
+- older deployments created before that change should update `.env` and rebuild once before `Apply update` can work
 - `Apply update` rebuilds and restarts `backend` and `frontend` from inside the app without requiring a CLI session
 
 This is intentionally a user-confirmed update path. The system does not silently self-update.
