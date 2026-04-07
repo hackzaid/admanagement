@@ -220,29 +220,37 @@ export function AppShell({
             >
               Menu
             </button>
-            <div className="topbar-links">
-              {primaryNav.map((item) => (
-                <Link
-                  className={`topbar-link${pathname === item.href ? " topbar-link-active" : ""}`}
-                  href={item.href}
-                  key={item.href}
-                >
-                  {item.label}
-                </Link>
-              ))}
+            <div className="topbar-route-shell">
+              <div className="topbar-route-label">Workspace</div>
+              <div className="topbar-links">
+                {primaryNav.map((item) => (
+                  <Link
+                    className={`topbar-link${pathname === item.href ? " topbar-link-active" : ""}`}
+                    href={item.href}
+                    key={item.href}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
           <div className="topbar-actions">
             <div className="topbar-context">
-              <div className="topbar-identity">
-                {session ? (
-                  <>
-                    <strong>{session.display_name || session.username}</strong>
-                    <span>{session.username}</span>
-                  </>
-                ) : (
-                  <span>Signed out</span>
-                )}
+              <div className="topbar-identity-card">
+                <div className="topbar-identity-avatar">
+                  {(session?.display_name || session?.username || "AD").slice(0, 1).toUpperCase()}
+                </div>
+                <div className="topbar-identity">
+                  {session ? (
+                    <>
+                      <strong>{session.display_name || session.username}</strong>
+                      <span>{session.username}</span>
+                    </>
+                  ) : (
+                    <span>Signed out</span>
+                  )}
+                </div>
               </div>
               <div className="topbar-runtime">
                 <div className="topbar-runtime-item">
@@ -258,10 +266,10 @@ export function AppShell({
               </div>
             </div>
             <div className="topbar-button-group">
-              <button className="topbar-link" onClick={() => void refreshUpdateStatus()} type="button">
+              <button className="topbar-utility-button" onClick={() => void refreshUpdateStatus()} type="button">
                 {updateChecking ? "Checking..." : "Check updates"}
               </button>
-              <button className="topbar-link" onClick={() => void logout()} type="button">
+              <button className="topbar-utility-button topbar-utility-button-secondary" onClick={() => void logout()} type="button">
                 Sign out
               </button>
             </div>

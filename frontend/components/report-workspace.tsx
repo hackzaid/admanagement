@@ -76,32 +76,50 @@ export function ReportWorkspace({
         : "alert";
 
   return (
-    <AppShell title={report.title} subtitle={report.description} eyebrow={report.category}>
-      <section className="report-filter-bar panel">
-        <div className="filter-pair">
+    <AppShell title={report.title} subtitle={report.description} eyebrow={report.category} heroMode="none">
+      <section className="report-stage">
+        <div className="report-stage-copy">
+          <span className="report-stage-kicker">{report.category}</span>
+          <h2>{report.title}</h2>
+          <p>{report.description}</p>
+        </div>
+        <div className="report-stage-side">
+          <div className="report-stage-metric">
+            <span>Rows in scope</span>
+            <strong>{activityQuery.total_count}</strong>
+          </div>
+          <div className="report-stage-metric">
+            <span>Coverage</span>
+            <strong>{supportText}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="report-filter-bar panel report-filter-bar-primary">
+        <div className="filter-pair filter-pair-soft">
           <span className="filter-label">Domain</span>
           <strong>Active Directory</strong>
         </div>
-        <div className="filter-pair">
+        <div className="filter-pair filter-pair-soft">
           <span className="filter-label">Coverage</span>
           <strong>{supportText}</strong>
         </div>
-        <div className="filter-pair">
+        <div className="filter-pair filter-pair-soft">
           <span className="filter-label">Rows in scope</span>
           <strong>{activityQuery.total_count}</strong>
         </div>
       </section>
 
       <section className="report-filter-bar panel">
-        <div className="filter-pair">
+        <div className="filter-pair filter-pair-soft">
           <span className="filter-label">Actor filter</span>
           <strong>{filters.actor || "All operators"}</strong>
         </div>
-        <div className="filter-pair">
+        <div className="filter-pair filter-pair-soft">
           <span className="filter-label">DC filter</span>
           <strong>{filters.domainController || "All domain controllers"}</strong>
         </div>
-        <div className="filter-pair">
+        <div className="filter-pair filter-pair-soft">
           <span className="filter-label">Search / Export</span>
           <div className="filter-actions">
             <strong>{filters.search || "No search filter"}</strong>

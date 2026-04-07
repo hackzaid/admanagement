@@ -378,6 +378,12 @@ export function HomeDashboard({
     { label: "Stale Users", value: snapshot.findings?.stale_users?.count ?? 0, tone: "neutral" },
   ];
 
+  const authPressureTotal = (logon.event_counts?.LogonFailure ?? 0) + (logon.event_counts?.AccountLockout ?? 0);
+  const hygienePressureTotal =
+    (snapshot.findings?.stale_users?.count ?? 0) +
+    (snapshot.findings?.stale_computers?.count ?? 0) +
+    (snapshot.findings?.password_never_expires?.count ?? 0);
+
   return (
     <AppShell
       title="Active Directory home"
@@ -417,6 +423,47 @@ export function HomeDashboard({
         {runNowMessage ? <span className="home-preview-flag">{runNowMessage}</span> : null}
         {runNowError ? <span className="home-preview-flag home-preview-flag-danger">{runNowError}</span> : null}
         {dashboard.isFallback ? <span className="home-preview-flag">Preview dataset</span> : null}
+      </section>
+
+      <section className="dashboard-focus-grid">
+        <article className="dashboard-focus-card dashboard-focus-card-primary">
+          <div className="dashboard-focus-head">
+            <div>
+              <span className="dashboard-focus-kicker">Identity operations pulse</span>
+              <h2>Directory risk is being shaped by authentication pressure, stale identity hygiene, and privileged change concentration.</h2>
+            </div>
+            <div className="dashboard-focus-tag">
+              <span>{view === "graphical" ? "Graphical view" : "Summary view"}</span>
+              <strong>{selectedPreset === "custom" ? "Custom range" : selectedPreset.replace("d", " day")}</strong>
+            </div>
+          </div>
+          <div className="dashboard-focus-stats">
+            <div className="dashboard-focus-stat">
+              <span>Captured AD actions</span>
+              <strong>{formatCount(activity.total_count)}</strong>
+            </div>
+            <div className="dashboard-focus-stat">
+              <span>Auth events in scope</span>
+              <strong>{formatCount(logon.total_count)}</strong>
+            </div>
+            <div className="dashboard-focus-stat">
+              <span>Snapshot objects covered</span>
+              <strong>{formatCount((snapshot.counts?.user ?? 0) + (snapshot.counts?.computer ?? 0) + (snapshot.counts?.group ?? 0))}</strong>
+            </div>
+          </div>
+        </article>
+
+        <article className="dashboard-focus-card">
+          <span className="dashboard-focus-kicker">Authentication pressure</span>
+          <strong className="dashboard-focus-value">{formatCount(authPressureTotal)}</strong>
+          <p>Failed logons and lockouts requiring operator attention in the selected range.</p>
+        </article>
+
+        <article className="dashboard-focus-card">
+          <span className="dashboard-focus-kicker">Directory hygiene</span>
+          <strong className="dashboard-focus-value">{formatCount(hygienePressureTotal)}</strong>
+          <p>Stale users, stale computers, and non-expiring passwords impacting current posture.</p>
+        </article>
       </section>
 
       <section className="dashboard-filter-strip panel">
@@ -492,16 +539,16 @@ export function HomeDashboard({
             <section className="home-widget-grid">
               <article className="home-widget">
                 <div className="home-widget-head">
-                  <h3>Top operators by change volume</h3>
-                  <span>Selected range</span>
+                  <h3>Operator concentration</h3>
+                  <span>Most active change actors</span>
                 </div>
                 <VerticalBars data={topActorBars} />
               </article>
 
               <article className="home-widget">
                 <div className="home-widget-head">
-                  <h3>Account management</h3>
-                  <span>Selected range</span>
+                  <h3>Change mix</h3>
+                  <span>Action categories in range</span>
                 </div>
                 <VerticalBars data={accountManagementBars} />
               </article>
@@ -509,31 +556,31 @@ export function HomeDashboard({
               <article className="home-widget">
                 <div className="home-widget-head">
                   <h3>Identity risk mix</h3>
-                  <span>Auth + snapshot weighted</span>
+                  <span>Authentication and hygiene weighted</span>
                 </div>
                 <DonutSummary segments={identityRiskSegments} />
               </article>
 
               <article className="home-widget">
                 <div className="home-widget-head">
-                  <h3>Administrative activity by hour</h3>
-                  <span>UTC</span>
+                  <h3>Administrative tempo</h3>
+                  <span>Hourly distribution</span>
                 </div>
                 <LinePulseChart values={hourlySeries} />
               </article>
 
               <article className="home-widget">
                 <div className="home-widget-head">
-                  <h3>Privileged group exposure</h3>
-                  <span>Top groups</span>
+                  <h3>Privilege exposure</h3>
+                  <span>Groups with highest member count</span>
                 </div>
                 <VerticalBars data={privilegeBars} />
               </article>
 
               <article className="home-widget">
                 <div className="home-widget-head">
-                  <h3>Failure and stale object watch</h3>
-                  <span>Immediate audit flags</span>
+                  <h3>Failure hotspots</h3>
+                  <span>Source hosts and immediate audit flags</span>
                 </div>
                 <VerticalBars data={authFailureBars.length ? authFailureBars : passwordBars} />
               </article>
