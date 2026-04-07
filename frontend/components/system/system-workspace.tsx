@@ -126,6 +126,7 @@ export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOv
   };
 
   const updateStatus = overview.update_status;
+  const bootstrapRequired = overview.update_apply.state === "bootstrap_required";
   const releaseRows: Array<[string, string]> = [
     ["Current version", `v${overview.health.version}`],
     ["Current build ref", updateStatus.current_ref?.slice(0, 12) || "Unknown"],
@@ -179,7 +180,12 @@ export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOv
           kicker="Version control"
           actions={
             <div className="section-actions">
-              <button className="hero-pill" disabled={!overview.update_apply.enabled || applying} onClick={() => void applyUpdate()} type="button">
+              <button
+                className="hero-pill"
+                disabled={!overview.update_apply.enabled || applying || bootstrapRequired}
+                onClick={() => void applyUpdate()}
+                type="button"
+              >
                 {applying ? "Starting update..." : "Apply update"}
               </button>
               <button className="hero-pill hero-pill-outline" onClick={() => void refreshOverview()} type="button">
@@ -209,6 +215,12 @@ export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOv
           </div>
           {updateStatus.upgrade_instructions?.length ? (
             <code className="update-banner-command">{updateStatus.upgrade_instructions.join(" && ")}</code>
+          ) : null}
+          {bootstrapRequired ? (
+            <div className="banner">
+              One-time bootstrap required. Rebuild once from the host so the backend image includes the Docker CLI and the real host
+              project path, then in-app updates will work normally.
+            </div>
           ) : null}
           {overview.update_apply.last_error ? <div className="banner banner-danger">{overview.update_apply.last_error}</div> : null}
           <DetailRows rows={releaseRows} />

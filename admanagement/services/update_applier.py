@@ -50,8 +50,9 @@ class UpdateApplier:
         try:
             container_id = self._start_runner()
         except Exception as exc:
+            state = "bootstrap_required" if self._is_bootstrap_requirement_error(exc) else "error"
             with self._lock:
-                self._status["state"] = "error"
+                self._status["state"] = state
                 self._status["last_error"] = str(exc)
                 self._status["last_completed_at_utc"] = datetime.now(timezone.utc).isoformat()
                 self._status["runner_container_id"] = None
@@ -107,3 +108,7 @@ class UpdateApplier:
             check=True,
         )
         return completed.stdout.strip()
+
+    def _is_bootstrap_requirement_error(self, exc: Exception) -> bool:
+        message = str(exc)
+        return "does not include the Docker CLI" in message or "using the placeholder '/host/app'" in message

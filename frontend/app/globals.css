@@ -304,6 +304,19 @@ a {
   flex-wrap: wrap;
 }
 
+.topbar-actions {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.topbar-context,
+.topbar-button-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .topbar-link,
 .status-chip {
   padding: 9px 12px;
@@ -361,6 +374,8 @@ a {
   align-items: stretch;
   gap: 8px;
   flex-wrap: wrap;
+  padding-left: 10px;
+  border-left: 1px solid var(--line);
 }
 
 .topbar-runtime-item {
@@ -1933,6 +1948,12 @@ a {
     width: 100%;
   }
 
+  .topbar-actions,
+  .topbar-context,
+  .topbar-button-group {
+    justify-content: flex-start;
+  }
+
   .topbar-links {
     overflow-x: auto;
     flex-wrap: nowrap;
@@ -1949,8 +1970,15 @@ a {
     align-items: start;
   }
 
+  .topbar-context {
+    display: grid;
+    gap: 10px;
+  }
+
   .topbar-runtime {
     width: 100%;
+    padding-left: 0;
+    border-left: 0;
   }
 
   .topbar-runtime-item {

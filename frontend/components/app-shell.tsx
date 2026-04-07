@@ -49,6 +49,7 @@ export function AppShell({
   const [updateChecking, setUpdateChecking] = useState(false);
   const [updateApplying, setUpdateApplying] = useState(false);
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [dismissedUpdateKey, setDismissedUpdateKey] = useState("");
 
   useEffect(() => {
     setOpenGroups(defaultOpenGroups);
@@ -62,6 +63,9 @@ export function AppShell({
     let active = true;
 
     document.documentElement.dataset.theme = "slate";
+    if (typeof window !== "undefined") {
+      setDismissedUpdateKey(window.localStorage.getItem("admanagement_dismissed_update") ?? "");
+    }
 
     void getUpdateStatus().then((result) => {
       if (active) {
@@ -128,6 +132,17 @@ export function AppShell({
   const trackedBranchLabel = updateStatus?.branch || "main";
   const repositoryLabel = updateStatus?.repository?.split("/").slice(-1)[0] || "admanagement";
   const currentBuildLabel = updateStatus?.current_ref?.slice(0, 7) ?? `v${updateStatus?.current_version ?? "0.1.0"}`;
+  const latestUpdateKey = updateStatus?.latest_ref || updateStatus?.latest_version || "";
+  const showUpdateBanner = Boolean(updateStatus?.update_available && latestUpdateKey && dismissedUpdateKey !== latestUpdateKey);
+  const visibleUpdateStatus = showUpdateBanner ? updateStatus : null;
+
+  const dismissUpdateBanner = () => {
+    if (!latestUpdateKey || typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem("admanagement_dismissed_update", latestUpdateKey);
+    setDismissedUpdateKey(latestUpdateKey);
+  };
 
   return (
     <div className={`shell${navOpen ? " shell-mobile-open" : ""}`}>
@@ -217,63 +232,70 @@ export function AppShell({
             </div>
           </div>
           <div className="topbar-actions">
-            <div className="topbar-identity">
-              {session ? (
-                <>
-                  <strong>{session.display_name || session.username}</strong>
-                  <span>{session.username}</span>
-                </>
-              ) : (
-                <span>Signed out</span>
-              )}
-            </div>
-            <div className="topbar-runtime">
-              <div className="topbar-runtime-item">
-                <span className="topbar-runtime-label">Tracking</span>
-                <strong>{trackedBranchLabel}</strong>
-                <small>{repositoryLabel}</small>
+            <div className="topbar-context">
+              <div className="topbar-identity">
+                {session ? (
+                  <>
+                    <strong>{session.display_name || session.username}</strong>
+                    <span>{session.username}</span>
+                  </>
+                ) : (
+                  <span>Signed out</span>
+                )}
               </div>
-              <div className="topbar-runtime-item topbar-runtime-item-accent">
-                <span className="topbar-runtime-label">Build</span>
-                <strong>{buildStatusLabel}</strong>
-                <small>{currentBuildLabel}</small>
+              <div className="topbar-runtime">
+                <div className="topbar-runtime-item">
+                  <span className="topbar-runtime-label">Tracking</span>
+                  <strong>{trackedBranchLabel}</strong>
+                  <small>{repositoryLabel}</small>
+                </div>
+                <div className="topbar-runtime-item topbar-runtime-item-accent">
+                  <span className="topbar-runtime-label">Build</span>
+                  <strong>{buildStatusLabel}</strong>
+                  <small>{currentBuildLabel}</small>
+                </div>
               </div>
             </div>
-            <button className="topbar-link" onClick={() => void refreshUpdateStatus()} type="button">
-              {updateChecking ? "Checking..." : "Check updates"}
-            </button>
-            <button className="topbar-link" onClick={() => void logout()} type="button">
-              Sign out
-            </button>
+            <div className="topbar-button-group">
+              <button className="topbar-link" onClick={() => void refreshUpdateStatus()} type="button">
+                {updateChecking ? "Checking..." : "Check updates"}
+              </button>
+              <button className="topbar-link" onClick={() => void logout()} type="button">
+                Sign out
+              </button>
+            </div>
           </div>
         </header>
 
-        {updateStatus?.update_available ? (
+        {visibleUpdateStatus ? (
           <section className="update-banner">
             <div className="update-banner-copy">
               <strong>
-                Update available: {updateStatus.latest_version ? `v${updateStatus.latest_version}` : updateStatus.latest_ref?.slice(0, 7) ?? "new build"}
+                Update available: {visibleUpdateStatus.latest_version ? `v${visibleUpdateStatus.latest_version}` : visibleUpdateStatus.latest_ref?.slice(0, 7) ?? "new build"}
               </strong>
               <span>
-                Current build {updateStatus.current_ref?.slice(0, 7) ?? `v${updateStatus.current_version}`}
-                {updateStatus.latest_published_at_utc ? ` | Released ${new Date(updateStatus.latest_published_at_utc).toLocaleDateString()}` : ""}
+                Current build {visibleUpdateStatus.current_ref?.slice(0, 7) ?? `v${visibleUpdateStatus.current_version}`}
+                {visibleUpdateStatus.latest_published_at_utc ? ` | Released ${new Date(visibleUpdateStatus.latest_published_at_utc).toLocaleDateString()}` : ""}
               </span>
-              {updateStatus.release_notes_excerpt ? <p>{updateStatus.release_notes_excerpt}</p> : null}
-              {updateStatus.upgrade_instructions?.length ? (
-                <code className="update-banner-command">{updateStatus.upgrade_instructions.join(" && ")}</code>
+              {visibleUpdateStatus.release_notes_excerpt ? <p>{visibleUpdateStatus.release_notes_excerpt}</p> : null}
+              {visibleUpdateStatus.upgrade_instructions?.length ? (
+                <code className="update-banner-command">{visibleUpdateStatus.upgrade_instructions.join(" && ")}</code>
               ) : null}
             </div>
             <div className="update-banner-actions">
               <button className="hero-pill" onClick={() => void applyUpdate()} type="button">
                 {updateApplying ? "Starting update..." : "Apply update"}
               </button>
-              {updateStatus.latest_release_url ? (
-                <a className="hero-pill" href={updateStatus.latest_release_url} rel="noreferrer" target="_blank">
+              {visibleUpdateStatus.latest_release_url ? (
+                <a className="hero-pill" href={visibleUpdateStatus.latest_release_url} rel="noreferrer" target="_blank">
                   View release
                 </a>
               ) : null}
               <button className="hero-pill hero-pill-outline" onClick={() => void refreshUpdateStatus()} type="button">
                 Refresh
+              </button>
+              <button className="hero-pill hero-pill-outline" onClick={dismissUpdateBanner} type="button">
+                Close
               </button>
             </div>
           </section>
