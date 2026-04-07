@@ -70,7 +70,7 @@ export function ReportWorkspace({
 
   const capabilityTone = 
     report.capability === "planned" 
-      ? "muted" 
+      ? "default" 
       : report.capability === "activity" 
         ? "accent" 
         : "alert";

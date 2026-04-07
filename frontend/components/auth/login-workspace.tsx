@@ -33,7 +33,6 @@ export function LoginWorkspace() {
 
   return (
     <div className="login-screen">
-      {/* Ambient decorative elements to add visual depth */}
       <div className="login-backdrop">
         <div className="login-orb login-orb-primary" />
         <div className="login-orb login-orb-secondary" />
@@ -57,12 +56,14 @@ export function LoginWorkspace() {
             <p>Access the unified operational plane for Active Directory administrative auditing and compliance reporting.</p>
           </section>
 
-          <form className="login-form" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
-            {error ? (
-              <div className="banner banner-danger login-alert">
-                {error}
-              </div>
-            ) : null}
+          <form
+            className="login-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void submit();
+            }}
+          >
+            {error ? <div className="banner banner-danger login-alert">{error}</div> : null}
 
             <div className="login-fields">
               <label className="config-field">
@@ -79,7 +80,7 @@ export function LoginWorkspace() {
                 <span>Password</span>
                 <input
                   autoComplete="current-password"
-                  placeholder="••••••••"
+                  placeholder="********"
                   type="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -93,7 +94,7 @@ export function LoginWorkspace() {
           </form>
 
           <footer className="login-footer">
-            <div className="config-meta">Protected Information System • Session Audit Active</div>
+            <div className="config-meta">Protected Information System | Session Audit Active</div>
           </footer>
         </div>
       </main>
