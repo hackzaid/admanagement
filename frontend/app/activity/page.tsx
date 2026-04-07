@@ -13,6 +13,7 @@ export default async function ActivityPage() {
       title="Administrative user actions"
       subtitle="Track who changed what, when it happened, and where the action originated from across the domain."
       eyebrow="AD Changes"
+      heroMode="none"
     >
       <ActivityWorkspace recent={recent} summary={summary} />
     </AppShell>

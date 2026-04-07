@@ -132,6 +132,7 @@ export function AppShell({
   const trackedBranchLabel = updateStatus?.branch || "main";
   const repositoryLabel = updateStatus?.repository?.split("/").slice(-1)[0] || "admanagement";
   const currentBuildLabel = updateStatus?.current_ref?.slice(0, 7) ?? `v${updateStatus?.current_version ?? "0.1.0"}`;
+  const compactRuntimeLabel = `${trackedBranchLabel} · ${currentBuildLabel}`;
   const latestUpdateKey = updateStatus?.latest_ref || updateStatus?.latest_version || "";
   const showUpdateBanner = Boolean(updateStatus?.update_available && latestUpdateKey && dismissedUpdateKey !== latestUpdateKey);
   const visibleUpdateStatus = showUpdateBanner ? updateStatus : null;
@@ -252,17 +253,12 @@ export function AppShell({
                   )}
                 </div>
               </div>
-              <div className="topbar-runtime">
-                <div className="topbar-runtime-item">
-                  <span className="topbar-runtime-label">Tracking</span>
-                  <strong>{trackedBranchLabel}</strong>
-                  <small>{repositoryLabel}</small>
-                </div>
-                <div className="topbar-runtime-item topbar-runtime-item-accent">
-                  <span className="topbar-runtime-label">Build</span>
-                  <strong>{buildStatusLabel}</strong>
-                  <small>{currentBuildLabel}</small>
-                </div>
+              <div className="topbar-runtime-compact">
+                <span className={`topbar-runtime-pill${updateStatus?.update_available ? " topbar-runtime-pill-attention" : ""}`}>
+                  {buildStatusLabel}
+                </span>
+                <span className="topbar-runtime-meta">{compactRuntimeLabel}</span>
+                <span className="topbar-runtime-repo">{repositoryLabel}</span>
               </div>
             </div>
             <div className="topbar-button-group">

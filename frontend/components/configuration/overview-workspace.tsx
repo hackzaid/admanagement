@@ -58,6 +58,27 @@ export function ConfigurationOverviewWorkspace({ overview }: { overview: Configu
       subtitle="Choose a configuration area. Each operational function lives on its own page to keep editing focused."
       title="Configuration"
     >
+      <section className="report-stage">
+        <div className="report-stage-copy">
+          <span className="report-stage-kicker">Operational control plane</span>
+          <h2>Configuration should stay focused on the settings an everyday AD admin actually revisits.</h2>
+          <p>
+            Manage domain reachability, collector targets, business hours, audit prerequisites, alerting, and controlled
+            suppressions without burying operational settings in a long monolithic form.
+          </p>
+        </div>
+        <div className="report-stage-side">
+          <div className="report-stage-metric">
+            <span>Configured domain</span>
+            <strong>{overview.domain.domain_fqdn}</strong>
+          </div>
+          <div className="report-stage-metric">
+            <span>Enabled collectors</span>
+            <strong>{enabledControllers}</strong>
+          </div>
+        </div>
+      </section>
+
       <section className="card-grid card-grid-four">
         <StatCard label="Configured domain" value={overview.domain.domain_fqdn} hint={overview.domain.name} />
         <StatCard label="Active controllers" value={enabledControllers} hint="Enabled collector targets" tone="accent" />

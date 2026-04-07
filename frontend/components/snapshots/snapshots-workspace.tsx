@@ -26,6 +26,7 @@ export function SnapshotsWorkspace({
     name,
     details,
   }));
+  const topPrivilegedGroup = privilegedRows[0];
   const privilegedPagination = usePagination(privilegedRows, 5);
   const runsPagination = usePagination(runs, 10);
   const staleUserPagination = usePagination(staleUsers.rows, 10);
@@ -35,6 +36,27 @@ export function SnapshotsWorkspace({
 
   return (
     <>
+      <section className="report-stage">
+        <div className="report-stage-copy">
+          <span className="report-stage-kicker">Directory state and drift</span>
+          <h2>Snapshot evidence should explain why the current directory posture is risky, not just count risky objects.</h2>
+          <p>
+            This workspace surfaces stale identities, non-expiring passwords, and privileged exposure so operators can move
+            from compliance counts into specific accounts and groups that need action.
+          </p>
+        </div>
+        <div className="report-stage-side">
+          <div className="report-stage-metric">
+            <span>Latest snapshot</span>
+            <strong>{formatDisplayDateTime(summary.captured_at_utc, "No snapshot")}</strong>
+          </div>
+          <div className="report-stage-metric">
+            <span>Highest exposure</span>
+            <strong>{topPrivilegedGroup ? topPrivilegedGroup.name : "No privileged groups"}</strong>
+          </div>
+        </div>
+      </section>
+
       <section className="card-grid card-grid-four">
         <StatCard
           label="Latest run id"

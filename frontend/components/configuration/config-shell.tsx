@@ -17,7 +17,7 @@ export function ConfigurationShell({
   children: ReactNode;
 }) {
   return (
-    <AppShell title={title} subtitle={subtitle} eyebrow="Configuration">
+    <AppShell title={title} subtitle={subtitle} eyebrow="Configuration" heroMode="none">
       <ConfigurationNav overview={overview} />
       {children}
     </AppShell>

@@ -15,9 +15,32 @@ export function ActivityWorkspace({
   recent: DashboardOverview["recent_activity"];
 }) {
   const pagination = usePagination(recent, 10);
+  const topActor = summary.top_actors?.[0];
+  const topAction = summary.action_counts?.[0];
 
   return (
     <>
+      <section className="report-stage">
+        <div className="report-stage-copy">
+          <span className="report-stage-kicker">Operational change trail</span>
+          <h2>Administrative actions can be traced by operator, object type, source workstation, and recording controller.</h2>
+          <p>
+            Use this slate to understand who is driving directory churn, where actions originate from, and which categories
+            are dominating the current audit window.
+          </p>
+        </div>
+        <div className="report-stage-side">
+          <div className="report-stage-metric">
+            <span>Primary operator</span>
+            <strong>{topActor ? formatPrincipalDisplay(topActor.actor) : "No data"}</strong>
+          </div>
+          <div className="report-stage-metric">
+            <span>Dominant action</span>
+            <strong>{topAction ? `${topAction.target_type} ${topAction.action}` : "No data"}</strong>
+          </div>
+        </div>
+      </section>
+
       <section className="card-grid card-grid-three">
         <StatCard label="Total activity rows" value={summary.total_count ?? 0} hint="Stored in the platform database" />
         <StatCard

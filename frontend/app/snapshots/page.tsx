@@ -19,6 +19,7 @@ export default async function SnapshotsPage() {
       title="Directory compliance and state drift"
       subtitle="Use snapshot evidence to track stale objects, risky password settings, and privileged group exposure over time."
       eyebrow="Compliance"
+      heroMode="none"
     >
       <SnapshotsWorkspace
         runs={runs}
