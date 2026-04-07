@@ -95,12 +95,20 @@ class CollectorScheduler:
     def run_now(self, *, include_snapshot: bool = False) -> dict[str, Any]:
         with self._run_lock:
             triggered_at = datetime.now(timezone.utc).isoformat()
-            results: dict[str, dict[str, Any]] = {
-                "activity_poll": self._execute_activity_poll(),
-                "logon_poll": self._execute_logon_poll(),
-            }
+            results: dict[str, dict[str, Any]] = {}
+            try:
+                results["activity_poll"] = self._execute_activity_poll()
+            except Exception as exc:
+                results["activity_poll"] = {"error": str(exc), "timestamp_utc": datetime.now(timezone.utc).isoformat()}
+            try:
+                results["logon_poll"] = self._execute_logon_poll()
+            except Exception as exc:
+                results["logon_poll"] = {"error": str(exc), "timestamp_utc": datetime.now(timezone.utc).isoformat()}
             if include_snapshot:
-                results["ldap_snapshot"] = self._execute_ldap_snapshot()
+                try:
+                    results["ldap_snapshot"] = self._execute_ldap_snapshot()
+                except Exception as exc:
+                    results["ldap_snapshot"] = {"error": str(exc), "timestamp_utc": datetime.now(timezone.utc).isoformat()}
 
             return {
                 "triggered_at_utc": triggered_at,

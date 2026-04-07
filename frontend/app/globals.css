@@ -72,6 +72,10 @@ a {
   padding: 26px 18px;
   background: linear-gradient(180deg, var(--rail-gradient-start) 0%, var(--rail-gradient-end) 100%);
   border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
 }
 
 .shell-overlay,
@@ -137,6 +141,10 @@ a {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .side-heading {
@@ -296,13 +304,6 @@ a {
   flex-wrap: wrap;
 }
 
-.topbar-statuses {
-  display: flex;
-  align-items: stretch;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
 .topbar-link,
 .status-chip {
   padding: 9px 12px;
@@ -337,38 +338,57 @@ a {
   color: #83511a;
 }
 
-.topbar-status-card {
-  min-width: 148px;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 250, 253, 0.92));
+.topbar-identity {
   display: grid;
-  gap: 3px;
+  gap: 2px;
+  min-width: 140px;
+  padding: 4px 0;
 }
 
-.topbar-status-card strong {
+.topbar-identity strong {
   font-size: 0.9rem;
-  font-weight: 700;
   color: #203140;
 }
 
-.topbar-status-card small {
-  font-size: 0.74rem;
-  color: var(--text-soft);
+.topbar-identity span,
+.topbar-runtime-item small {
+  color: var(--muted);
+  font-size: 0.76rem;
 }
 
-.topbar-status-label {
-  font-size: 0.67rem;
+.topbar-runtime {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.topbar-runtime-item {
+  display: grid;
+  gap: 2px;
+  min-width: 104px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.topbar-runtime-item strong {
+  font-size: 0.84rem;
+  color: #203140;
+}
+
+.topbar-runtime-label {
+  font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #6d7b88;
 }
 
-.topbar-status-card-accent {
+.topbar-runtime-item-accent {
+  background: rgba(229, 238, 253, 0.9);
   border-color: rgba(88, 135, 213, 0.24);
-  background: linear-gradient(180deg, rgba(229, 238, 253, 0.96), rgba(242, 246, 253, 0.94));
 }
 
 .content {
@@ -386,6 +406,12 @@ a {
   border-left: 4px solid var(--info);
   border-radius: 8px;
   background: var(--info-soft);
+}
+
+.update-banner-success {
+  border-left-color: var(--accent);
+  border-color: rgba(10, 143, 120, 0.18);
+  background: rgba(221, 243, 244, 0.92);
 }
 
 .update-banner-copy {
@@ -1907,10 +1933,6 @@ a {
     width: 100%;
   }
 
-  .topbar-statuses {
-    width: 100%;
-  }
-
   .topbar-links {
     overflow-x: auto;
     flex-wrap: nowrap;
@@ -1921,9 +1943,19 @@ a {
     white-space: nowrap;
   }
 
-  .topbar-status-card {
+  .topbar-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .topbar-runtime {
+    width: 100%;
+  }
+
+  .topbar-runtime-item {
     min-width: 0;
-    flex: 1 1 180px;
+    flex: 1 1 150px;
   }
 
   .card-grid-four,

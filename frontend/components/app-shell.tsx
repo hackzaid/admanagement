@@ -101,6 +101,8 @@ export function AppShell({
     setUpdateApplying(true);
     try {
       await applySystemUpdate();
+      const refreshed = await getUpdateStatus(true);
+      setUpdateStatus(refreshed);
     } finally {
       setUpdateApplying(false);
     }
@@ -118,12 +120,14 @@ export function AppShell({
   const buildStatusLabel = updateStatus?.update_available
     ? "Update available"
     : updateStatus?.status === "ok"
-      ? "Current"
+      ? "Up to date"
       : updateStatus?.status === "error"
         ? "Check failed"
         : "Pending";
 
-  const trackedBranchLabel = updateStatus?.branch || updateStatus?.channel || "Main branch";
+  const trackedBranchLabel = updateStatus?.branch || "main";
+  const repositoryLabel = updateStatus?.repository?.split("/").slice(-1)[0] || "admanagement";
+  const currentBuildLabel = updateStatus?.current_ref?.slice(0, 7) ?? `v${updateStatus?.current_version ?? "0.1.0"}`;
 
   return (
     <div className={`shell${navOpen ? " shell-mobile-open" : ""}`}>
@@ -213,23 +217,26 @@ export function AppShell({
             </div>
           </div>
           <div className="topbar-actions">
-            <div className="topbar-statuses">
+            <div className="topbar-identity">
               {session ? (
-                <div className="topbar-status-card">
-                  <span className="topbar-status-label">Signed in</span>
+                <>
                   <strong>{session.display_name || session.username}</strong>
-                  <small>{session.username}</small>
-                </div>
-              ) : null}
-              <div className="topbar-status-card">
-                <span className="topbar-status-label">Tracking</span>
+                  <span>{session.username}</span>
+                </>
+              ) : (
+                <span>Signed out</span>
+              )}
+            </div>
+            <div className="topbar-runtime">
+              <div className="topbar-runtime-item">
+                <span className="topbar-runtime-label">Tracking</span>
                 <strong>{trackedBranchLabel}</strong>
-                <small>{updateStatus?.repository ?? "Repository not configured"}</small>
+                <small>{repositoryLabel}</small>
               </div>
-              <div className="topbar-status-card topbar-status-card-accent">
-                <span className="topbar-status-label">Build state</span>
+              <div className="topbar-runtime-item topbar-runtime-item-accent">
+                <span className="topbar-runtime-label">Build</span>
                 <strong>{buildStatusLabel}</strong>
-                <small>{updateStatus?.current_ref?.slice(0, 7) ?? `v${updateStatus?.current_version ?? "0.1.0"}`}</small>
+                <small>{currentBuildLabel}</small>
               </div>
             </div>
             <button className="topbar-link" onClick={() => void refreshUpdateStatus()} type="button">

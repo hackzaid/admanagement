@@ -151,6 +151,21 @@ class UpdateMonitor:
         }
 
     def _current_commit(self) -> str:
+        host_path = self.settings.update_host_project_path.strip()
+        if self.settings.update_deploy_mode == "docker-compose" and host_path and host_path != "/host/app":
+            try:
+                completed = subprocess.run(
+                    ["git", "-C", host_path, "rev-parse", "HEAD"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                    check=True,
+                )
+                current = completed.stdout.strip()
+                if current:
+                    return current
+            except Exception:
+                pass
         if self.settings.build_commit.strip():
             return self.settings.build_commit.strip()
         try:

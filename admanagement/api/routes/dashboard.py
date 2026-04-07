@@ -39,4 +39,12 @@ def dashboard_run_now(
             "error": "Collector scheduler is not available.",
         }
 
-    return scheduler.run_now(include_snapshot=include_snapshot)
+    try:
+        return scheduler.run_now(include_snapshot=include_snapshot)
+    except Exception as exc:
+        return {
+            "triggered_at_utc": None,
+            "include_snapshot": include_snapshot,
+            "results": {},
+            "error": f"Run now failed: {exc}",
+        }

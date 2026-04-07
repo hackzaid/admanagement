@@ -15,9 +15,16 @@ export type MenuGroup = {
 export type MenuEntry = MenuLeaf | MenuGroup;
 
 export const menuEntries: MenuEntry[] = [
-  { type: "item", label: "User Logon Reports", href: "/reports/user-logon-reports", reportKey: "user-logon-reports" },
-  { type: "item", label: "Local Logon-Logoff", href: "/reports/local-logon-logoff", reportKey: "local-logon-logoff" },
-  { type: "item", label: "ADFS Auditing", href: "/reports/adfs-auditing", reportKey: "adfs-auditing" },
+  {
+    type: "group",
+    label: "Access Auditing",
+    defaultOpen: true,
+    children: [
+      { type: "item", label: "User Logon Reports", href: "/reports/user-logon-reports", reportKey: "user-logon-reports" },
+      { type: "item", label: "Local Logon-Logoff", href: "/reports/local-logon-logoff", reportKey: "local-logon-logoff" },
+      { type: "item", label: "ADFS Auditing", href: "/reports/adfs-auditing", reportKey: "adfs-auditing" },
+    ],
+  },
   {
     type: "group",
     label: "Account Management",
@@ -54,26 +61,33 @@ export const menuEntries: MenuEntry[] = [
       },
     ],
   },
-  { type: "item", label: "User Management", href: "/reports/user-management", reportKey: "user-management" },
-  { type: "item", label: "Group Management", href: "/reports/group-management", reportKey: "group-management" },
-  { type: "item", label: "Computer Management", href: "/reports/computer-management", reportKey: "computer-management" },
-  { type: "item", label: "OU Management", href: "/reports/ou-management", reportKey: "ou-management" },
-  { type: "item", label: "GPO Management", href: "/reports/gpo-management", reportKey: "gpo-management" },
-  { type: "item", label: "GPO Setting Changes", href: "/reports/gpo-setting-changes", reportKey: "gpo-setting-changes" },
   {
-    type: "item",
-    label: "Other AD Object Changes",
-    href: "/reports/other-ad-object-changes",
-    reportKey: "other-ad-object-changes",
+    type: "group",
+    label: "Policy and Control",
+    children: [
+      { type: "item", label: "GPO Setting Changes", href: "/reports/gpo-setting-changes", reportKey: "gpo-setting-changes" },
+      { type: "item", label: "Permission Changes", href: "/reports/permission-changes", reportKey: "permission-changes" },
+      {
+        type: "item",
+        label: "Configuration Auditing",
+        href: "/reports/configuration-auditing",
+        reportKey: "configuration-auditing",
+      },
+    ],
   },
-  { type: "item", label: "Permission Changes", href: "/reports/permission-changes", reportKey: "permission-changes" },
   {
-    type: "item",
-    label: "Configuration Auditing",
-    href: "/reports/configuration-auditing",
-    reportKey: "configuration-auditing",
+    type: "group",
+    label: "Infrastructure",
+    children: [
+      {
+        type: "item",
+        label: "Other AD Object Changes",
+        href: "/reports/other-ad-object-changes",
+        reportKey: "other-ad-object-changes",
+      },
+      { type: "item", label: "DNS Changes", href: "/reports/dns-changes", reportKey: "dns-changes" },
+    ],
   },
-  { type: "item", label: "DNS Changes", href: "/reports/dns-changes", reportKey: "dns-changes" },
 ];
 
 export type ReportDefinition = {
