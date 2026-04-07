@@ -18,6 +18,7 @@ from admanagement.models.configuration import (
     ExcludedAccount,
     MonitoredDomain,
 )
+from admanagement.models.runtime_config import RuntimeSetting
 
 
 DEFAULT_ALERT_RULES = [
@@ -91,6 +92,7 @@ class ConfigurationService:
             policies = session.execute(
                 select(AuditPolicyExpectation).where(AuditPolicyExpectation.domain_id == domain.id).order_by(AuditPolicyExpectation.display_name)
             ).scalars().all()
+            logon_source_hosts = self._get_runtime_csv_list(session, "logon_source_hosts")
 
             last_checkpoints = self._checkpoint_map(session)
 
@@ -138,6 +140,7 @@ class ConfigurationService:
                 "domain": self._serialize_domain(domain),
                 "business_hours": self._serialize_business_hours(business_hours),
                 "domain_controllers": [self._serialize_controller(item, last_checkpoints) for item in controllers],
+                "logon_source_hosts": logon_source_hosts or [item.hostname for item in controllers],
                 "excluded_accounts": [self._serialize_exclusion(item) for item in exclusions],
                 "alert_rules": [self._serialize_alert(item) for item in alerts],
                 "audit_policy_expectations": [self._serialize_policy(item) for item in policies],
@@ -208,6 +211,44 @@ class ConfigurationService:
             ).scalars().all()
             checkpoints = self._checkpoint_map(session)
             return [self._serialize_controller(item, checkpoints) for item in rows]
+
+    def get_logon_source_hosts(self) -> list[str]:
+        init_db()
+        with SessionLocal() as session:
+            domain = self._ensure_seeded(session)
+            configured_hosts = self._get_runtime_csv_list(session, "logon_source_hosts")
+            if configured_hosts:
+                return configured_hosts
+            rows = session.execute(
+                select(DomainControllerConfig).where(
+                    DomainControllerConfig.domain_id == domain.id,
+                    DomainControllerConfig.is_enabled.is_(True),
+                ).order_by(DomainControllerConfig.name)
+            ).scalars().all()
+            return [item.hostname for item in rows]
+
+    def upsert_logon_source_hosts(self, hosts: list[str]) -> list[str]:
+        init_db()
+        now = datetime.now(timezone.utc)
+        cleaned_hosts = [item.strip() for item in hosts if item and item.strip()]
+        with SessionLocal() as session:
+            row = session.execute(
+                select(RuntimeSetting).where(RuntimeSetting.setting_key == "logon_source_hosts")
+            ).scalar_one_or_none()
+            serialized = ",".join(cleaned_hosts)
+            if row is None:
+                row = RuntimeSetting(
+                    setting_key="logon_source_hosts",
+                    setting_value=serialized,
+                    is_secret=False,
+                    updated_at_utc=now,
+                )
+                session.add(row)
+            else:
+                row.setting_value = serialized
+                row.updated_at_utc = now
+            session.commit()
+        return cleaned_hosts
 
     def upsert_domain_controller(
         self,
@@ -538,6 +579,14 @@ class ConfigurationService:
             f"{row.checkpoint_type}:{row.source_name}": row.last_activity_time_utc
             for row in rows
         }
+
+    def _get_runtime_csv_list(self, session, key: str) -> list[str]:
+        row = session.execute(
+            select(RuntimeSetting).where(RuntimeSetting.setting_key == key)
+        ).scalar_one_or_none()
+        if row is None or not row.setting_value:
+            return []
+        return [item.strip() for item in row.setting_value.split(",") if item.strip()]
 
     def _derive_domain_fqdn(self) -> str:
         if self.settings.ldap_base_dn:

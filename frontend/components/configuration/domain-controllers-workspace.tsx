@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { SectionPanel } from "@/components/cards";
-import { ConfigurationOverview, DomainControllerConfig, upsertDomainController } from "@/lib/api";
+import { ConfigurationOverview, DomainControllerConfig, updateLogonSourceHosts, upsertDomainController } from "@/lib/api";
 import { formatDisplayDateTime } from "@/lib/datetime";
 
 import { ConfigurationShell } from "./config-shell";
@@ -22,6 +22,7 @@ function intValue(value: string, fallback: number) {
 
 export function DomainControllersWorkspace({ overview }: { overview: ConfigurationOverview }) {
   const [controllers, setControllers] = useState<DomainControllerConfig[]>(overview.domain_controllers);
+  const [logonSourceHosts, setLogonSourceHosts] = useState((overview.logon_source_hosts ?? []).join("\n"));
   const [newController, setNewController] = useState({
     hostname: "",
     name: "",
@@ -62,6 +63,9 @@ export function DomainControllersWorkspace({ overview }: { overview: Configurati
       {error ? <div className="banner banner-danger">{error}</div> : null}
 
       <SectionPanel kicker="Collector execution plane" title="Available Domain Controllers">
+        <div className="plain-copy" style={{ marginBottom: 16 }}>
+          Keep domain controllers here for AD object change collection. Use the separate logon-source list below for member servers, RDP jump hosts, and other Windows systems where you want better sign-in and source-IP fidelity.
+        </div>
         <div className="table-wrap">
           <table className="data-table">
             <thead>
@@ -143,6 +147,45 @@ export function DomainControllersWorkspace({ overview }: { overview: Configurati
           totalPages={pagination.totalPages}
           totalRows={pagination.totalRows}
         />
+      </SectionPanel>
+
+      <SectionPanel kicker="Authentication evidence scope" title="Logon Source Hosts">
+        <div className="plain-copy" style={{ marginBottom: 16 }}>
+          These hosts are polled for `4624`, `4625`, `4634`, and `4740` events. Add member servers or jump hosts here when you need to know which server was reached via RDP and from which workstation or IP.
+        </div>
+        <label className="config-field">
+          <span>One hostname or IP per line</span>
+          <textarea
+            className="config-textarea"
+            rows={8}
+            value={logonSourceHosts}
+            onChange={(event) => setLogonSourceHosts(event.target.value)}
+          />
+        </label>
+        <div className="config-actions">
+          <button
+            className="dashboard-apply-button"
+            disabled={savingKey === "logon-sources"}
+            onClick={() =>
+              void runAction(
+                "logon-sources",
+                async () => {
+                  const saved = await updateLogonSourceHosts({
+                    hosts: logonSourceHosts
+                      .split(/\r?\n/)
+                      .map((item) => item.trim())
+                      .filter(Boolean),
+                  });
+                  setLogonSourceHosts(saved.hosts.join("\n"));
+                },
+                "Updated logon source hosts.",
+              )
+            }
+            type="button"
+          >
+            {savingKey === "logon-sources" ? "Saving..." : "Save Logon Sources"}
+          </button>
+        </div>
       </SectionPanel>
 
       <SectionPanel kicker="Add collector target" title="New Domain Controller">

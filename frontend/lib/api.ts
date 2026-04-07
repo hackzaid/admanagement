@@ -295,6 +295,7 @@ export type ConfigurationOverview = {
   domain: MonitoredDomainConfig;
   business_hours: BusinessHoursConfig;
   domain_controllers: DomainControllerConfig[];
+  logon_source_hosts: string[];
   excluded_accounts: ExcludedAccountConfig[];
   alert_rules: AlertRuleConfig[];
   audit_policy_expectations: AuditPolicyExpectation[];
@@ -838,6 +839,7 @@ export async function getConfigurationOverview(): Promise<ConfigurationOverview>
         updated_at_utc: "Preview",
       },
       domain_controllers: [],
+      logon_source_hosts: [],
       excluded_accounts: [],
       alert_rules: [],
       audit_policy_expectations: [],
@@ -865,6 +867,18 @@ export async function upsertDomainController(payload: {
   status?: string;
 }): Promise<DomainControllerConfig> {
   return writeJson<DomainControllerConfig>("/api/configuration/domain-controllers", "POST", payload);
+}
+
+export async function getLogonSourceHosts(): Promise<{ hosts: string[] }> {
+  try {
+    return await fetchJson<{ hosts: string[] }>("/api/configuration/logon-source-hosts");
+  } catch {
+    return { hosts: [] };
+  }
+}
+
+export async function updateLogonSourceHosts(payload: { hosts: string[] }): Promise<{ hosts: string[] }> {
+  return writeJson<{ hosts: string[] }>("/api/configuration/logon-source-hosts", "PUT", payload);
 }
 
 export async function updateBusinessHours(payload: {

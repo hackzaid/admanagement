@@ -28,6 +28,10 @@ class DomainControllerUpsertRequest(BaseModel):
     status: str = "configured"
 
 
+class LogonSourceHostsRequest(BaseModel):
+    hosts: list[str]
+
+
 class BusinessHoursUpsertRequest(BaseModel):
     timezone_name: str
     start_hour: int = Field(ge=0, le=23)
@@ -88,6 +92,16 @@ def list_domain_controllers() -> list[dict[str, object]]:
 @router.post("/domain-controllers")
 def upsert_domain_controller(payload: DomainControllerUpsertRequest) -> dict[str, object]:
     return _service().upsert_domain_controller(**payload.model_dump())
+
+
+@router.get("/logon-source-hosts")
+def get_logon_source_hosts() -> dict[str, object]:
+    return {"hosts": _service().get_logon_source_hosts()}
+
+
+@router.put("/logon-source-hosts")
+def upsert_logon_source_hosts(payload: LogonSourceHostsRequest) -> dict[str, object]:
+    return {"hosts": _service().upsert_logon_source_hosts(payload.hosts)}
 
 
 @router.get("/business-hours")

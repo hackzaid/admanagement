@@ -60,6 +60,7 @@ class RuntimeConfigService:
                     "ldap_base_dn": (default_domain.ldap_base_dn if default_domain and default_domain.ldap_base_dn else self.settings.ldap_base_dn) or "",
                     "ldap_bind_dn": runtime_map.get("ldap_bind_dn", self.settings.ldap_bind_dn),
                     "domain_controllers": [item.hostname for item in controllers] or self.settings.event_dc_list,
+                    "logon_source_hosts": self._split_hosts(runtime_map.get("logon_source_hosts")) or [item.hostname for item in controllers] or self.settings.event_dc_list,
                     "winrm_username": runtime_map.get("winrm_username", self.settings.winrm_username),
                     "winrm_domain": runtime_map.get("winrm_domain", self.settings.winrm_domain),
                     "winrm_auth": runtime_map.get("winrm_auth", self.settings.winrm_auth),
@@ -130,6 +131,7 @@ class RuntimeConfigService:
         ldap_server = runtime_map.get("ldap_server") or (default_domain.ldap_server if default_domain else None) or self.settings.ldap_server
         ldap_base_dn = runtime_map.get("ldap_base_dn") or (default_domain.ldap_base_dn if default_domain else None) or self.settings.ldap_base_dn
         event_dc_list = [item.hostname for item in controllers] or self.settings.event_dc_list
+        logon_source_hosts = self._split_hosts(runtime_map.get("logon_source_hosts")) or event_dc_list
 
         return {
             "ldap_server": ldap_server,
@@ -137,6 +139,7 @@ class RuntimeConfigService:
             "ldap_bind_dn": runtime_map.get("ldap_bind_dn") or self.settings.ldap_bind_dn,
             "ldap_bind_password": runtime_map.get("ldap_bind_password") or self.settings.ldap_bind_password.get_secret_value(),
             "event_dc_list": event_dc_list,
+            "logon_source_hosts": logon_source_hosts,
             "winrm_username": runtime_map.get("winrm_username") or self.settings.winrm_username,
             "winrm_domain": runtime_map.get("winrm_domain") or self.settings.winrm_domain,
             "winrm_password": runtime_map.get("winrm_password") or self.settings.winrm_password.get_secret_value(),
@@ -184,3 +187,8 @@ class RuntimeConfigService:
             return int(value)
         except ValueError:
             return fallback
+
+    def _split_hosts(self, value: str | None) -> list[str]:
+        if value is None or not value.strip():
+            return []
+        return [item.strip() for item in value.split(",") if item.strip()]

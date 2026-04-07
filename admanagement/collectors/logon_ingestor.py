@@ -31,7 +31,7 @@ class LogonIngestor:
             "collector": "logon_ingestor",
             "mode": self.settings.event_ingestor_mode,
             "window_minutes": self.settings.event_window_minutes,
-            "domain_controllers": effective["event_dc_list"],
+            "hosts": effective["logon_source_hosts"],
         }
 
     def run(
@@ -42,7 +42,7 @@ class LogonIngestor:
         domain_controllers: list[str] | None = None,
     ) -> dict[str, object]:
         effective = self.runtime.effective_runtime()
-        configured_domain_controllers = domain_controllers or effective["event_dc_list"]
+        configured_domain_controllers = domain_controllers or effective["logon_source_hosts"]
         effective_window_minutes = window_minutes_override or self.settings.event_window_minutes
 
         totals = {
