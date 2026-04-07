@@ -180,6 +180,7 @@ export function AppShell({
                       >
                         <span className="side-dot" />
                         <span>{child.label}</span>
+                        {child.isPlanned ? <span className="side-badge">Planned</span> : null}
                       </Link>
                     ))}
                   </div>

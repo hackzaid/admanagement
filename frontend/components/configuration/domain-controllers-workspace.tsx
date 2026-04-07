@@ -15,6 +15,16 @@ function formatInterval(seconds: number) {
   return `${seconds}s`;
 }
 
+function getStatusTone(status: string) {
+  switch (status) {
+    case "listening": return "text-success";
+    case "error": return "text-danger";
+    case "paused": return "text-warning";
+    case "configured": return "text-muted";
+    default: return "";
+  }
+}
+
 function intValue(value: string, fallback: number) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -91,12 +101,15 @@ export function DomainControllersWorkspace({ overview }: { overview: Configurati
                       <div className="table-note">{formatInterval(item.event_fetch_interval_seconds)}</div>
                     </td>
                     <td>
-                      <select className="table-input" value={item.status} onChange={(event) => patchController(item.id, { status: event.target.value })}>
-                        <option value="configured">Configured</option>
-                        <option value="listening">Listening</option>
-                        <option value="paused">Paused</option>
-                        <option value="error">Error</option>
-                      </select>
+                      <div className="flex-stack-sm">
+                        <span className={`status-dot ${getStatusTone(item.status)}`}>●</span>
+                        <select className="table-input" value={item.status} onChange={(event) => patchController(item.id, { status: event.target.value })}>
+                          <option value="configured">Configured</option>
+                          <option value="listening">Listening</option>
+                          <option value="paused">Paused</option>
+                          <option value="error">Error</option>
+                        </select>
+                      </div>
                     </td>
                     <td>
                       <label className="config-toggle config-toggle-inline">

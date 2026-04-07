@@ -1,31 +1,32 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { loginAuthSession } from "@/lib/api";
 
-import { loginWithAd } from "@/lib/api";
-
-function setSessionCookie(token: string) {
-  document.cookie = `admanagement_session=${encodeURIComponent(token)}; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 12}`;
-}
-
-export function LoginWorkspace() {
+export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const submit = async () => {
+  useEffect(() => {
+    // Ensure the system theme is active on the login page context
+    document.documentElement.dataset.theme = "slate";
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
+
     try {
-      const session = await loginWithAd({ username, password });
-      setSessionCookie(session.token);
+      // Attempt to establish a session via the backend API
+      await loginAuthSession({ username, password });
       router.push("/");
-      router.refresh();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Login failed.");
+      setError(caught instanceof Error ? caught.message : "Authentication failed. Please verify your credentials.");
     } finally {
       setLoading(false);
     }
@@ -57,7 +58,7 @@ export function LoginWorkspace() {
             <p>Access the unified operational plane for Active Directory administrative auditing and compliance reporting.</p>
           </section>
 
-          <form className="login-form" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
+          <form className="login-form" onSubmit={handleSubmit}>
             {error ? (
               <div className="banner banner-danger login-alert">
                 {error}
@@ -69,25 +70,26 @@ export function LoginWorkspace() {
                 <span>Username</span>
                 <input
                   autoFocus
-                  autoComplete="username"
+                  required
                   placeholder="Operator username"
+                  type="text"
                   value={username}
-                  onChange={(event) => setUsername(event.target.value)}
+                  onChange={(e) => setUsername(e.target.value)}
                 />
               </label>
               <label className="config-field">
                 <span>Password</span>
                 <input
-                  autoComplete="current-password"
+                  required
                   placeholder="••••••••"
                   type="password"
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </label>
             </div>
 
-            <button className="dashboard-apply-button login-submit" disabled={loading || !username.trim() || !password} type="submit">
+            <button className="dashboard-apply-button login-submit" disabled={loading} type="submit">
               {loading ? "Authenticating..." : "Sign In to Console"}
             </button>
           </form>

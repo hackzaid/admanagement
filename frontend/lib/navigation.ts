@@ -3,6 +3,7 @@ export type MenuLeaf = {
   label: string;
   href: string;
   reportKey?: string;
+  isPlanned?: boolean;
 };
 
 export type MenuGroup = {
@@ -20,9 +21,25 @@ export const menuEntries: MenuEntry[] = [
     label: "Access Auditing",
     defaultOpen: true,
     children: [
-      { type: "item", label: "User Logon Reports", href: "/reports/user-logon-reports", reportKey: "user-logon-reports" },
-      { type: "item", label: "Local Logon-Logoff", href: "/reports/local-logon-logoff", reportKey: "local-logon-logoff" },
-      { type: "item", label: "ADFS Auditing", href: "/reports/adfs-auditing", reportKey: "adfs-auditing" },
+      {
+        type: "item",
+        label: "User Logon Reports",
+        href: "/reports/user-logon-reports",
+        reportKey: "user-logon-reports",
+      },
+      {
+        type: "item",
+        label: "Local Logon-Logoff",
+        href: "/reports/local-logon-logoff",
+        reportKey: "local-logon-logoff",
+      },
+      {
+        type: "item",
+        label: "ADFS Auditing",
+        href: "/reports/adfs-auditing",
+        reportKey: "adfs-auditing",
+        isPlanned: true,
+      },
     ],
   },
   {
@@ -30,7 +47,12 @@ export const menuEntries: MenuEntry[] = [
     label: "Account Management",
     defaultOpen: true,
     children: [
-      { type: "item", label: "All AD Changes", href: "/reports/account-management/all-ad-changes", reportKey: "all-ad-changes" },
+      {
+        type: "item",
+        label: "All AD Changes",
+        href: "/reports/account-management/all-ad-changes",
+        reportKey: "all-ad-changes",
+      },
       {
         type: "item",
         label: "All AD Changes By User",
@@ -43,16 +65,37 @@ export const menuEntries: MenuEntry[] = [
         href: "/reports/account-management/all-ad-changes-on-dcs",
         reportKey: "all-ad-changes-on-dcs",
       },
-      { type: "item", label: "User Management", href: "/reports/account-management/user-management", reportKey: "user-management" },
-      { type: "item", label: "Group Management", href: "/reports/account-management/group-management", reportKey: "group-management" },
+      {
+        type: "item",
+        label: "User Management",
+        href: "/reports/account-management/user-management",
+        reportKey: "user-management",
+      },
+      {
+        type: "item",
+        label: "Group Management",
+        href: "/reports/account-management/group-management",
+        reportKey: "group-management",
+      },
       {
         type: "item",
         label: "Computer Management",
         href: "/reports/account-management/computer-management",
         reportKey: "computer-management",
       },
-      { type: "item", label: "OU Management", href: "/reports/account-management/ou-management", reportKey: "ou-management" },
-      { type: "item", label: "GPO Management", href: "/reports/account-management/gpo-management", reportKey: "gpo-management" },
+      {
+        type: "item",
+        label: "OU Management",
+        href: "/reports/account-management/ou-management",
+        reportKey: "ou-management",
+        isPlanned: true,
+      },
+      {
+        type: "item",
+        label: "GPO Management",
+        href: "/reports/account-management/gpo-management",
+        reportKey: "gpo-management",
+      },
       {
         type: "item",
         label: "Administrative User Actions",
@@ -65,8 +108,20 @@ export const menuEntries: MenuEntry[] = [
     type: "group",
     label: "Policy and Control",
     children: [
-      { type: "item", label: "GPO Setting Changes", href: "/reports/gpo-setting-changes", reportKey: "gpo-setting-changes" },
-      { type: "item", label: "Permission Changes", href: "/reports/permission-changes", reportKey: "permission-changes" },
+      {
+        type: "item",
+        label: "GPO Setting Changes",
+        href: "/reports/gpo-setting-changes",
+        reportKey: "gpo-setting-changes",
+        isPlanned: true,
+      },
+      {
+        type: "item",
+        label: "Permission Changes",
+        href: "/reports/permission-changes",
+        reportKey: "permission-changes",
+        isPlanned: true,
+      },
       {
         type: "item",
         label: "Configuration Auditing",
@@ -84,8 +139,15 @@ export const menuEntries: MenuEntry[] = [
         label: "Other AD Object Changes",
         href: "/reports/other-ad-object-changes",
         reportKey: "other-ad-object-changes",
+        isPlanned: true,
       },
-      { type: "item", label: "DNS Changes", href: "/reports/dns-changes", reportKey: "dns-changes" },
+      {
+        type: "item",
+        label: "DNS Changes",
+        href: "/reports/dns-changes",
+        reportKey: "dns-changes",
+        isPlanned: true,
+      },
     ],
   },
 ];

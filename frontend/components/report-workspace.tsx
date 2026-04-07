@@ -68,6 +68,13 @@ export function ReportWorkspace({
           ? "Mixed activity and snapshot view"
           : "Planned collector expansion";
 
+  const capabilityTone = 
+    report.capability === "planned" 
+      ? "muted" 
+      : report.capability === "activity" 
+        ? "accent" 
+        : "alert";
+
   return (
     <AppShell title={report.title} subtitle={report.description} eyebrow={report.category}>
       <section className="report-filter-bar panel">
@@ -109,7 +116,7 @@ export function ReportWorkspace({
         <StatCard label="Activity rows" value={activityQuery.total_count} hint="Filtered for this report" />
         <StatCard label="Top operators" value={actorBars.length} hint="Unique operators in current slice" tone="accent" />
         <StatCard label="Snapshot runs" value={snapshotRuns.length} hint="Available for comparison" />
-        <StatCard label="Current support" value={report.capability.toUpperCase()} hint={supportText} tone="alert" />
+        <StatCard label="Current support" value={report.capability.toUpperCase()} hint={supportText} tone={capabilityTone} />
       </section>
 
       <section className="two-column">
