@@ -309,6 +309,8 @@ export type LogonSummary = {
   event_mix: Array<{ event_type: string; count: number }>;
   event_counts?: Record<string, number>;
   top_failure_sources?: Array<{ source: string; count: number }>;
+  failure_ip_sources?: Array<{ source: string; count: number }>;
+  lockout_workstations?: Array<{ source: string; count: number }>;
   rdp_summary?: {
     success_count: number;
     failure_count: number;

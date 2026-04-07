@@ -75,6 +75,15 @@ export function LogonReportWorkspace({
     rdpQuery.rows,
     (row) => row.source_workstation || row.source_ip_address || "Unknown",
   ).slice(0, 8);
+  const rdpRecordedHosts = countBy(rdpQuery.rows, (row) => row.domain_controller || "Unknown").slice(0, 8);
+  const failureIpBars = countBy(
+    rows.filter((row) => row.event_type === "LogonFailure"),
+    (row) => row.source_ip_address || "Unknown",
+  ).slice(0, 8);
+  const lockoutWorkstationBars = countBy(
+    rows.filter((row) => row.event_type === "AccountLockout"),
+    (row) => row.source_workstation || "Unknown",
+  ).slice(0, 8);
   const exportUrl = buildLogonExportUrl({
     actor: filters.actor,
     domainController: filters.domainController,
@@ -181,9 +190,9 @@ export function LogonReportWorkspace({
       {report.key === "user-logon-reports" ? (
         <>
           <section className="two-column">
-          <SectionPanel title="Top failure sources" kicker="Lockouts and failed sign-ins">
-            <HorizontalBars tone="amber" data={failureSources.length ? failureSources : logonSummary.top_failure_sources?.map((item) => ({ label: item.source, value: item.count })) ?? []} />
-          </SectionPanel>
+            <SectionPanel title="Top failure sources" kicker="Lockouts and failed sign-ins">
+              <HorizontalBars tone="amber" data={failureSources.length ? failureSources : logonSummary.top_failure_sources?.map((item) => ({ label: item.source, value: item.count })) ?? []} />
+            </SectionPanel>
             <SectionPanel title="RDP access origin" kicker="Remote interactive access recorded by source IP or workstation">
               <HorizontalBars
                 tone="amber"
@@ -195,6 +204,59 @@ export function LogonReportWorkspace({
               />
               <div className="plain-copy" style={{ marginTop: 16 }}>
                 Source IP and workstation are strongest when the recording host is the actual target server. When you only poll domain controllers, this remains authentication evidence rather than full endpoint-session evidence.
+              </div>
+            </SectionPanel>
+          </section>
+
+          <section className="two-column">
+            <SectionPanel title="Failed logons by source IP" kicker="Password spray and credential misuse vantage">
+              <HorizontalBars
+                tone="amber"
+                data={
+                  failureIpBars.length
+                    ? failureIpBars
+                    : logonSummary.failure_ip_sources?.map((item) => ({ label: item.source, value: item.count })) ?? []
+                }
+              />
+            </SectionPanel>
+            <SectionPanel title="Lockouts by source workstation" kicker="Caller machine concentration">
+              <HorizontalBars
+                data={
+                  lockoutWorkstationBars.length
+                    ? lockoutWorkstationBars
+                    : logonSummary.lockout_workstations?.map((item) => ({ label: item.source, value: item.count })) ?? []
+                }
+              />
+            </SectionPanel>
+          </section>
+
+          <section className="two-column">
+            <SectionPanel title="RDP recorded hosts" kicker="Which target hosts are producing remote interactive evidence">
+              <HorizontalBars
+                data={
+                  rdpRecordedHosts.length
+                    ? rdpRecordedHosts
+                    : rdpSummary?.recording_hosts?.map((item) => ({ label: item.host, value: item.count })) ?? []
+                }
+              />
+              <div className="plain-copy" style={{ marginTop: 16 }}>
+                Add member servers and jump hosts under Configuration {" > "} Domain Controllers {" > "} Logon Source Hosts to move this from DC-authentication perspective to actual target-host perspective.
+              </div>
+            </SectionPanel>
+            <SectionPanel title="What this means" kicker="Using the new pivots">
+              <div className="mini-list">
+                <div className="mini-list-item">
+                  <span>Source IP pivot</span>
+                  <strong>Find spray / brute-force origin</strong>
+                </div>
+                <div className="mini-list-item">
+                  <span>Lockout workstation pivot</span>
+                  <strong>Find noisy callers and bad mappings</strong>
+                </div>
+                <div className="mini-list-item">
+                  <span>Recorded host pivot</span>
+                  <strong>Find which server was actually accessed</strong>
+                </div>
               </div>
             </SectionPanel>
           </section>

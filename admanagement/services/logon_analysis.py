@@ -180,6 +180,44 @@ class LogonAnalysisService:
                 .limit(limit)
             ).all()
 
+            failure_ip_sources = session.execute(
+                select(
+                    func.coalesce(
+                        base_statement.c.source_ip_address,
+                        cast(literal("Unknown"), String),
+                    ),
+                    func.count(),
+                )
+                .where(base_statement.c.event_type == "LogonFailure")
+                .group_by(
+                    func.coalesce(
+                        base_statement.c.source_ip_address,
+                        cast(literal("Unknown"), String),
+                    )
+                )
+                .order_by(func.count().desc())
+                .limit(limit)
+            ).all()
+
+            lockout_workstations = session.execute(
+                select(
+                    func.coalesce(
+                        base_statement.c.source_workstation,
+                        cast(literal("Unknown"), String),
+                    ),
+                    func.count(),
+                )
+                .where(base_statement.c.event_type == "AccountLockout")
+                .group_by(
+                    func.coalesce(
+                        base_statement.c.source_workstation,
+                        cast(literal("Unknown"), String),
+                    )
+                )
+                .order_by(func.count().desc())
+                .limit(limit)
+            ).all()
+
         return {
             "total_count": total_count,
             "latest_activity_time_utc": latest_time.isoformat() if latest_time else None,
@@ -194,6 +232,8 @@ class LogonAnalysisService:
                 "top_sources": [{"source": source, "count": count} for source, count in rdp_sources],
                 "recording_hosts": [{"host": host, "count": count} for host, count in recording_hosts],
             },
+            "failure_ip_sources": [{"source": source, "count": count} for source, count in failure_ip_sources],
+            "lockout_workstations": [{"source": source, "count": count} for source, count in lockout_workstations],
         }
 
     def query_logons(
