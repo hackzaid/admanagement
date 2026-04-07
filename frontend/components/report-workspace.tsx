@@ -168,8 +168,9 @@ export function ReportWorkspace({
                     <th>Action</th>
                     <th>Type</th>
                     <th>Target</th>
-                    <th>Source</th>
-                    <th>DC</th>
+                    <th>Source Workstation</th>
+                    <th>Source IP</th>
+                    <th>Recorded On</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -180,7 +181,8 @@ export function ReportWorkspace({
                       <td>{row.action}</td>
                       <td>{row.target_type}</td>
                       <td>{row.target_name}</td>
-                      <td>{row.source_workstation || row.source_ip_address || "-"}</td>
+                      <td>{row.source_workstation || "-"}</td>
+                      <td>{row.source_ip_address || "-"}</td>
                       <td>{row.domain_controller}</td>
                     </tr>
                   ))}

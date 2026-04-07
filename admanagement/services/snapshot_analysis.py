@@ -192,6 +192,53 @@ class SnapshotAnalysisService:
             "target_findings": target_summary.get("findings", {}),
         }
 
+    def query_findings(
+        self,
+        *,
+        finding: str,
+        run_id: str | None = None,
+        stale_days: int = 180,
+        limit: int = 100,
+        offset: int = 0,
+        group_name: str | None = None,
+    ) -> dict[str, Any]:
+        selected_run_id = run_id or self.latest_run_id()
+        if not selected_run_id:
+            return {
+                "run_id": None,
+                "finding": finding,
+                "limit": limit,
+                "offset": offset,
+                "total_count": 0,
+                "rows": [],
+            }
+
+        snapshots = self._load_run(selected_run_id)
+        users = [item for item in snapshots if item.snapshot.object_type == "user"]
+        computers = [item for item in snapshots if item.snapshot.object_type == "computer"]
+        privileged_groups = [item for item in snapshots if item.snapshot.object_type == "privileged_group"]
+
+        if finding == "stale_users":
+            rows = self._find_stale_objects(users, stale_days=stale_days, object_type="user")
+        elif finding == "stale_computers":
+            rows = self._find_stale_objects(computers, stale_days=stale_days, object_type="computer")
+        elif finding == "password_never_expires":
+            rows = self._find_password_never_expires(users)
+        elif finding == "privileged_group_members":
+            rows = self._flatten_privileged_group_members(privileged_groups, group_name=group_name)
+        else:
+            raise ValueError(f"Unsupported finding: {finding}")
+
+        return {
+            "run_id": selected_run_id,
+            "finding": finding,
+            "group_name": group_name,
+            "limit": limit,
+            "offset": offset,
+            "total_count": len(rows),
+            "rows": rows[offset : offset + limit],
+        }
+
     def _load_run(self, run_id: str) -> list[SnapshotObject]:
         with SessionLocal() as session:
             rows = session.execute(
@@ -263,6 +310,37 @@ class SnapshotAnalysisService:
                 "sample_members": members[:10],
             }
         return summary
+
+    def _flatten_privileged_group_members(
+        self,
+        groups: list[SnapshotObject],
+        *,
+        group_name: str | None = None,
+    ) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        for item in groups:
+            if group_name and item.snapshot.object_name != group_name:
+                continue
+            members = coerce_list(item.payload.get("member"))
+            if not members:
+                rows.append(
+                    {
+                        "group_name": item.snapshot.object_name,
+                        "member_name": None,
+                        "member_dn": None,
+                    }
+                )
+                continue
+            for member in members:
+                rows.append(
+                    {
+                        "group_name": item.snapshot.object_name,
+                        "member_name": member.split(",", 1)[0].removeprefix("CN="),
+                        "member_dn": member,
+                    }
+                )
+        rows.sort(key=lambda row: (row["group_name"] or "", row["member_name"] or ""))
+        return rows
 
     def _object_count_delta(
         self,

@@ -96,6 +96,10 @@ class LogonAnalysisService:
                 domain_controller=None,
                 event_type=None,
                 event_types=None,
+                source_workstation=None,
+                source_ip_address=None,
+                logon_type=None,
+                authentication_package=None,
                 search=None,
                 start_time_utc=start_time_utc,
                 end_time_utc=end_time_utc,
@@ -142,6 +146,40 @@ class LogonAnalysisService:
                 .limit(limit)
             ).all()
 
+            rdp_success_count = session.execute(
+                select(func.count())
+                .select_from(base_statement)
+                .where(
+                    base_statement.c.logon_type == "10",
+                    base_statement.c.event_type == "Logon",
+                )
+            ).scalar_one()
+
+            rdp_failure_count = session.execute(
+                select(func.count())
+                .select_from(base_statement)
+                .where(
+                    base_statement.c.logon_type == "10",
+                    base_statement.c.event_type.in_(("LogonFailure", "AccountLockout")),
+                )
+            ).scalar_one()
+
+            rdp_sources = session.execute(
+                select(source_key, func.count())
+                .where(base_statement.c.logon_type == "10")
+                .group_by(source_key)
+                .order_by(func.count().desc())
+                .limit(limit)
+            ).all()
+
+            recording_hosts = session.execute(
+                select(base_statement.c.domain_controller, func.count())
+                .where(base_statement.c.logon_type == "10")
+                .group_by(base_statement.c.domain_controller)
+                .order_by(func.count().desc())
+                .limit(limit)
+            ).all()
+
         return {
             "total_count": total_count,
             "latest_activity_time_utc": latest_time.isoformat() if latest_time else None,
@@ -150,6 +188,12 @@ class LogonAnalysisService:
             "event_mix": [{"event_type": event_type, "count": count} for event_type, count in event_mix],
             "event_counts": {event_type: count for event_type, count in event_mix},
             "top_failure_sources": [{"source": source, "count": count} for source, count in top_failure_sources],
+            "rdp_summary": {
+                "success_count": rdp_success_count,
+                "failure_count": rdp_failure_count,
+                "top_sources": [{"source": source, "count": count} for source, count in rdp_sources],
+                "recording_hosts": [{"host": host, "count": count} for host, count in recording_hosts],
+            },
         }
 
     def query_logons(
@@ -161,6 +205,10 @@ class LogonAnalysisService:
         domain_controller: str | None = None,
         event_type: str | None = None,
         event_types: list[str] | None = None,
+        source_workstation: str | None = None,
+        source_ip_address: str | None = None,
+        logon_type: str | None = None,
+        authentication_package: str | None = None,
         search: str | None = None,
         start_time_utc: str | None = None,
         end_time_utc: str | None = None,
@@ -172,6 +220,10 @@ class LogonAnalysisService:
             domain_controller=domain_controller,
             event_type=event_type,
             event_types=event_types,
+            source_workstation=source_workstation,
+            source_ip_address=source_ip_address,
+            logon_type=logon_type,
+            authentication_package=authentication_package,
             search=search,
             start_time_utc=start_time_utc,
             end_time_utc=end_time_utc,
@@ -184,6 +236,10 @@ class LogonAnalysisService:
             domain_controller=domain_controller,
             event_type=event_type,
             event_types=event_types,
+            source_workstation=source_workstation,
+            source_ip_address=source_ip_address,
+            logon_type=logon_type,
+            authentication_package=authentication_package,
             search=search,
             start_time_utc=start_time_utc,
             end_time_utc=end_time_utc,
@@ -209,6 +265,10 @@ class LogonAnalysisService:
         domain_controller: str | None = None,
         event_type: str | None = None,
         event_types: list[str] | None = None,
+        source_workstation: str | None = None,
+        source_ip_address: str | None = None,
+        logon_type: str | None = None,
+        authentication_package: str | None = None,
         search: str | None = None,
         start_time_utc: str | None = None,
         end_time_utc: str | None = None,
@@ -221,6 +281,10 @@ class LogonAnalysisService:
             domain_controller=domain_controller,
             event_type=event_type,
             event_types=event_types,
+            source_workstation=source_workstation,
+            source_ip_address=source_ip_address,
+            logon_type=logon_type,
+            authentication_package=authentication_package,
             search=search,
             start_time_utc=start_time_utc,
             end_time_utc=end_time_utc,
@@ -291,6 +355,10 @@ class LogonAnalysisService:
         domain_controller: str | None,
         event_type: str | None,
         event_types: list[str] | None,
+        source_workstation: str | None,
+        source_ip_address: str | None,
+        logon_type: str | None,
+        authentication_package: str | None,
         search: str | None,
         start_time_utc: str | None,
         end_time_utc: str | None,
@@ -300,11 +368,19 @@ class LogonAnalysisService:
             conditions.append(LogonActivity.actor.ilike(f"%{actor}%"))
         if domain_controller:
             conditions.append(LogonActivity.domain_controller.ilike(f"%{domain_controller}%"))
+        if source_workstation:
+            conditions.append(LogonActivity.source_workstation.ilike(f"%{source_workstation}%"))
+        if source_ip_address:
+            conditions.append(LogonActivity.source_ip_address.ilike(f"%{source_ip_address}%"))
         effective_event_types = [value for value in (event_types or []) if value]
         if event_type:
             conditions.append(LogonActivity.event_type == event_type)
         elif effective_event_types:
             conditions.append(LogonActivity.event_type.in_(effective_event_types))
+        if logon_type:
+            conditions.append(LogonActivity.logon_type == logon_type)
+        if authentication_package:
+            conditions.append(LogonActivity.authentication_package.ilike(f"%{authentication_package}%"))
         if search:
             pattern = f"%{search}%"
             conditions.append(

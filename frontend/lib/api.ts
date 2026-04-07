@@ -24,6 +24,18 @@ export type SnapshotSummary = {
   };
 };
 
+export type SnapshotFindingRow = Record<string, unknown>;
+
+export type SnapshotFindingQueryResult = {
+  run_id?: string | null;
+  finding: string;
+  group_name?: string | null;
+  total_count: number;
+  limit: number;
+  offset: number;
+  rows: SnapshotFindingRow[];
+};
+
 export type SchedulerStatus = {
   enabled: boolean;
   running: boolean;
@@ -296,6 +308,12 @@ export type LogonSummary = {
   event_mix: Array<{ event_type: string; count: number }>;
   event_counts?: Record<string, number>;
   top_failure_sources?: Array<{ source: string; count: number }>;
+  rdp_summary?: {
+    success_count: number;
+    failure_count: number;
+    top_sources: Array<{ source: string; count: number }>;
+    recording_hosts: Array<{ host: string; count: number }>;
+  };
 };
 
 export type LogonRow = {
@@ -637,6 +655,37 @@ export async function getSnapshotSummary(): Promise<SnapshotSummary> {
   }
 }
 
+export async function getSnapshotFindings(params: {
+  finding: "stale_users" | "stale_computers" | "password_never_expires" | "privileged_group_members";
+  runId?: string;
+  staleDays?: number;
+  limit?: number;
+  offset?: number;
+  groupName?: string;
+}): Promise<SnapshotFindingQueryResult> {
+  const query = new URLSearchParams();
+  query.set("finding", params.finding);
+  if (params.runId) query.set("run_id", params.runId);
+  if (params.staleDays) query.set("stale_days", String(params.staleDays));
+  if (params.groupName) query.set("group_name", params.groupName);
+  query.set("limit", String(params.limit ?? 100));
+  query.set("offset", String(params.offset ?? 0));
+
+  try {
+    return await fetchJson<SnapshotFindingQueryResult>(`/api/snapshots/findings?${query.toString()}`);
+  } catch {
+    return {
+      run_id: params.runId ?? null,
+      finding: params.finding,
+      group_name: params.groupName ?? null,
+      total_count: 0,
+      limit: params.limit ?? 100,
+      offset: params.offset ?? 0,
+      rows: [],
+    };
+  }
+}
+
 export async function getActivitySummary(): Promise<MetricSummary> {
   try {
     return await fetchJson<MetricSummary>("/api/activity/summary?limit=12");
@@ -882,6 +931,10 @@ export async function getLogonQuery(params: {
   domainController?: string;
   eventType?: "Logon" | "Logoff" | "LogonFailure" | "AccountLockout";
   eventTypes?: Array<"Logon" | "Logoff" | "LogonFailure" | "AccountLockout">;
+  sourceWorkstation?: string;
+  sourceIpAddress?: string;
+  logonType?: string;
+  authenticationPackage?: string;
   search?: string;
   startTimeUtc?: string;
   endTimeUtc?: string;
@@ -895,6 +948,10 @@ export async function getLogonQuery(params: {
   if (params.eventTypes) {
     for (const value of params.eventTypes) query.append("event_types", value);
   }
+  if (params.sourceWorkstation) query.set("source_workstation", params.sourceWorkstation);
+  if (params.sourceIpAddress) query.set("source_ip_address", params.sourceIpAddress);
+  if (params.logonType) query.set("logon_type", params.logonType);
+  if (params.authenticationPackage) query.set("authentication_package", params.authenticationPackage);
   if (params.search) query.set("search", params.search);
   if (params.startTimeUtc) query.set("start_time_utc", params.startTimeUtc);
   if (params.endTimeUtc) query.set("end_time_utc", params.endTimeUtc);
@@ -918,6 +975,10 @@ export function buildLogonExportUrl(params: {
   domainController?: string;
   eventType?: "Logon" | "Logoff" | "LogonFailure" | "AccountLockout";
   eventTypes?: Array<"Logon" | "Logoff" | "LogonFailure" | "AccountLockout">;
+  sourceWorkstation?: string;
+  sourceIpAddress?: string;
+  logonType?: string;
+  authenticationPackage?: string;
   search?: string;
   startTimeUtc?: string;
   endTimeUtc?: string;
@@ -930,6 +991,10 @@ export function buildLogonExportUrl(params: {
   if (params.eventTypes) {
     for (const value of params.eventTypes) query.append("event_types", value);
   }
+  if (params.sourceWorkstation) query.set("source_workstation", params.sourceWorkstation);
+  if (params.sourceIpAddress) query.set("source_ip_address", params.sourceIpAddress);
+  if (params.logonType) query.set("logon_type", params.logonType);
+  if (params.authenticationPackage) query.set("authentication_package", params.authenticationPackage);
   if (params.search) query.set("search", params.search);
   if (params.startTimeUtc) query.set("start_time_utc", params.startTimeUtc);
   if (params.endTimeUtc) query.set("end_time_utc", params.endTimeUtc);

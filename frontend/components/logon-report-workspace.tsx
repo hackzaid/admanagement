@@ -4,7 +4,12 @@ import { AppShell } from "@/components/app-shell";
 import { HorizontalBars } from "@/components/charts";
 import { PaginationFooter, TablePanel, usePagination } from "@/components/configuration/paginated-table";
 import { SectionPanel, StatCard } from "@/components/cards";
-import { LogonQueryResult, LogonSummary, SnapshotSummary, buildLogonExportUrl } from "@/lib/api";
+import {
+  LogonQueryResult,
+  LogonSummary,
+  SnapshotFindingQueryResult,
+  buildLogonExportUrl,
+} from "@/lib/api";
 import { formatDisplayDateTime } from "@/lib/datetime";
 import { formatPrincipalDisplay } from "@/lib/identity";
 import { ReportDefinition } from "@/lib/navigation";
@@ -22,15 +27,21 @@ function countBy<T>(items: T[], getKey: (item: T) => string) {
 
 export function LogonReportWorkspace({
   report,
-  snapshotSummary,
+  staleUsers,
+  staleComputers,
+  nonExpiringUsers,
   logonSummary,
   queryResult,
+  rdpQuery,
   filters,
 }: {
   report: ReportDefinition;
-  snapshotSummary: SnapshotSummary;
+  staleUsers: SnapshotFindingQueryResult;
+  staleComputers: SnapshotFindingQueryResult;
+  nonExpiringUsers: SnapshotFindingQueryResult;
   logonSummary: LogonSummary;
   queryResult: LogonQueryResult;
+  rdpQuery: LogonQueryResult;
   filters: {
     actor?: string;
     domainController?: string;
@@ -42,17 +53,26 @@ export function LogonReportWorkspace({
 }) {
   const rows = queryResult.rows;
   const pagination = usePagination(rows, 10);
+  const rdpPagination = usePagination(rdpQuery.rows, 10);
+  const staleUserPagination = usePagination(staleUsers.rows, 8);
+  const staleComputerPagination = usePagination(staleComputers.rows, 8);
+  const nonExpiringPagination = usePagination(nonExpiringUsers.rows, 8);
   const eventCounts = logonSummary.event_counts ?? {};
   const logonCount = eventCounts.Logon ?? rows.filter((row) => row.event_type === "Logon").length;
   const logoffCount = eventCounts.Logoff ?? rows.filter((row) => row.event_type === "Logoff").length;
   const failureCount = eventCounts.LogonFailure ?? rows.filter((row) => row.event_type === "LogonFailure").length;
   const lockoutCount = eventCounts.AccountLockout ?? rows.filter((row) => row.event_type === "AccountLockout").length;
+  const rdpSummary = logonSummary.rdp_summary;
 
   const topUsers = countBy(rows, (row) => formatPrincipalDisplay(row.actor)).slice(0, 8);
   const sourceHosts = countBy(rows, (row) => row.source_workstation || row.source_ip_address || "Unknown").slice(0, 8);
   const eventMix = countBy(rows, (row) => row.event_type).slice(0, 6);
   const failureSources = countBy(
     rows.filter((row) => row.event_type === "LogonFailure" || row.event_type === "AccountLockout"),
+    (row) => row.source_workstation || row.source_ip_address || "Unknown",
+  ).slice(0, 8);
+  const rdpSources = countBy(
+    rdpQuery.rows,
     (row) => row.source_workstation || row.source_ip_address || "Unknown",
   ).slice(0, 8);
   const exportUrl = buildLogonExportUrl({
@@ -121,6 +141,34 @@ export function LogonReportWorkspace({
         />
       </section>
 
+      {report.key === "user-logon-reports" ? (
+        <section className="card-grid card-grid-four">
+          <StatCard
+            label="RDP / Remote interactive successes"
+            value={rdpSummary?.success_count ?? 0}
+            hint="Logon type 10 sessions recorded"
+            tone="accent"
+          />
+          <StatCard
+            label="RDP / Remote interactive failures"
+            value={rdpSummary?.failure_count ?? 0}
+            hint="Failed or locked-out remote interactive attempts"
+            tone="alert"
+          />
+          <StatCard
+            label="Stale users behind auth risk"
+            value={staleUsers.total_count}
+            hint="Inactive enabled accounts to investigate"
+          />
+          <StatCard
+            label="Password-never-expires users"
+            value={nonExpiringUsers.total_count}
+            hint="Human accounts should not normally live here"
+            tone="alert"
+          />
+        </section>
+      ) : null}
+
       <section className="two-column">
         <SectionPanel title="Top users" kicker={report.key === "local-logon-logoff" ? "Observed session activity" : "Observed identity activity"}>
           <HorizontalBars data={topUsers} />
@@ -131,33 +179,177 @@ export function LogonReportWorkspace({
       </section>
 
       {report.key === "user-logon-reports" ? (
-        <section className="two-column">
+        <>
+          <section className="two-column">
           <SectionPanel title="Top failure sources" kicker="Lockouts and failed sign-ins">
             <HorizontalBars tone="amber" data={failureSources.length ? failureSources : logonSummary.top_failure_sources?.map((item) => ({ label: item.source, value: item.count })) ?? []} />
           </SectionPanel>
-          <SectionPanel title="Snapshot context" kicker="Credential hygiene backdrop">
-            <div className="bars">
-              <div className="bar-row">
-                <div className="bar-copy">
-                  <div className="bar-label">Stale users</div>
-                </div>
-                <div className="bar-track">
-                  <div className="bar-fill bar-fill-blue" style={{ width: "100%" }} />
-                </div>
-                <div className="bar-value">{snapshotSummary.findings?.stale_users?.count ?? 0}</div>
+            <SectionPanel title="RDP access origin" kicker="Remote interactive access recorded by source IP or workstation">
+              <HorizontalBars
+                tone="amber"
+                data={
+                  rdpSources.length
+                    ? rdpSources
+                    : rdpSummary?.top_sources?.map((item) => ({ label: item.source, value: item.count })) ?? []
+                }
+              />
+              <div className="plain-copy" style={{ marginTop: 16 }}>
+                Source IP and workstation are strongest when the recording host is the actual target server. When you only poll domain controllers, this remains authentication evidence rather than full endpoint-session evidence.
               </div>
-              <div className="bar-row">
-                <div className="bar-copy">
-                  <div className="bar-label">Password never expires</div>
-                </div>
-                <div className="bar-track">
-                  <div className="bar-fill bar-fill-amber" style={{ width: "100%" }} />
-                </div>
-                <div className="bar-value">{snapshotSummary.findings?.password_never_expires?.count ?? 0}</div>
-              </div>
-            </div>
+            </SectionPanel>
+          </section>
+
+          <section className="two-column">
+            <SectionPanel title="Stale enabled users" kicker="Accounts that may still be generating auth noise">
+              <TablePanel
+                table={
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>Days inactive</th>
+                        <th>Last logon</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {staleUserPagination.pagedRows.map((row) => (
+                        <tr key={String(row.name)}>
+                          <td>{formatPrincipalDisplay(String(row.name))}</td>
+                          <td>{String(row.days_since_logon ?? "Unknown")}</td>
+                          <td>{formatDisplayDateTime(String(row.last_logon_utc ?? ""), "No recorded logon")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                }
+                footer={
+                  <PaginationFooter
+                    page={staleUserPagination.page}
+                    pageSize={staleUserPagination.pageSize}
+                    totalRows={staleUserPagination.totalRows}
+                    totalPages={staleUserPagination.totalPages}
+                    onPageChange={staleUserPagination.setPage}
+                    onPageSizeChange={staleUserPagination.setPageSize}
+                  />
+                }
+              />
+            </SectionPanel>
+            <SectionPanel title="Password policy exceptions" kicker="Accounts with non-expiring credentials">
+              <TablePanel
+                table={
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>UPN</th>
+                        <th>DN</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {nonExpiringPagination.pagedRows.map((row) => (
+                        <tr key={String(row.name)}>
+                          <td>{formatPrincipalDisplay(String(row.name))}</td>
+                          <td>{String(row.user_principal_name ?? "-")}</td>
+                          <td>{String(row.distinguished_name ?? "-")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                }
+                footer={
+                  <PaginationFooter
+                    page={nonExpiringPagination.page}
+                    pageSize={nonExpiringPagination.pageSize}
+                    totalRows={nonExpiringPagination.totalRows}
+                    totalPages={nonExpiringPagination.totalPages}
+                    onPageChange={nonExpiringPagination.setPage}
+                    onPageSizeChange={nonExpiringPagination.setPageSize}
+                  />
+                }
+              />
+            </SectionPanel>
+          </section>
+
+          <SectionPanel title="RDP / remote interactive detail" kicker="Logon type 10 rows with source context">
+            <TablePanel
+              table={
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>User</th>
+                      <th>Event</th>
+                      <th>Source Workstation</th>
+                      <th>Source IP</th>
+                      <th>Recorded On</th>
+                      <th>Auth</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rdpPagination.pagedRows.map((row) => (
+                      <tr key={`${row.id}-${row.event_record_id ?? row.time_utc}`}>
+                        <td>{formatDisplayDateTime(row.time_utc)}</td>
+                        <td>{formatPrincipalDisplay(row.actor)}</td>
+                        <td>{row.event_type}</td>
+                        <td>{row.source_workstation || "-"}</td>
+                        <td>{row.source_ip_address || "-"}</td>
+                        <td>{row.domain_controller}</td>
+                        <td>{row.authentication_package || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              }
+              footer={
+                <PaginationFooter
+                  page={rdpPagination.page}
+                  pageSize={rdpPagination.pageSize}
+                  totalRows={rdpPagination.totalRows}
+                  totalPages={rdpPagination.totalPages}
+                  onPageChange={rdpPagination.setPage}
+                  onPageSizeChange={rdpPagination.setPageSize}
+                />
+              }
+            />
           </SectionPanel>
-        </section>
+
+          <SectionPanel title="Stale computers behind auth noise" kicker="Enabled computer accounts without recent sign-in">
+            <TablePanel
+              table={
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Computer</th>
+                      <th>Days inactive</th>
+                      <th>Last logon</th>
+                      <th>DN</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {staleComputerPagination.pagedRows.map((row) => (
+                      <tr key={String(row.name)}>
+                        <td>{String(row.name)}</td>
+                        <td>{String(row.days_since_logon ?? "Unknown")}</td>
+                        <td>{formatDisplayDateTime(String(row.last_logon_utc ?? ""), "No recorded logon")}</td>
+                        <td>{String(row.distinguished_name ?? "-")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              }
+              footer={
+                <PaginationFooter
+                  page={staleComputerPagination.page}
+                  pageSize={staleComputerPagination.pageSize}
+                  totalRows={staleComputerPagination.totalRows}
+                  totalPages={staleComputerPagination.totalPages}
+                  onPageChange={staleComputerPagination.setPage}
+                  onPageSizeChange={staleComputerPagination.setPageSize}
+                />
+              }
+            />
+          </SectionPanel>
+        </>
       ) : null}
 
       <SectionPanel title="Detailed authentication rows" kicker="Recent identity access events">
@@ -173,7 +365,7 @@ export function LogonReportWorkspace({
                   <th>Source IP</th>
                   <th>Logon Type</th>
                   <th>Auth</th>
-                  <th>DC</th>
+                  <th>Recorded On</th>
                 </tr>
               </thead>
               <tbody>
