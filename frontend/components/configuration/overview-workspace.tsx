@@ -58,7 +58,7 @@ export function ConfigurationOverviewWorkspace({ overview }: { overview: Configu
       subtitle="Choose a configuration area. Each operational function lives on its own page to keep editing focused."
       title="Configuration"
     >
-      <section className="report-stage">
+      <section className="report-stage motion-stage-block">
         <div className="report-stage-copy">
           <span className="report-stage-kicker">Operational control plane</span>
           <h2>Configuration should stay focused on the settings an everyday AD admin actually revisits.</h2>
@@ -79,7 +79,7 @@ export function ConfigurationOverviewWorkspace({ overview }: { overview: Configu
         </div>
       </section>
 
-      <section className="card-grid card-grid-four">
+      <section className="card-grid card-grid-four motion-stage-block">
         <StatCard label="Configured domain" value={overview.domain.domain_fqdn} hint={overview.domain.name} />
         <StatCard label="Active controllers" value={enabledControllers} hint="Enabled collector targets" tone="accent" />
         <StatCard label="Alert rules" value={enabledAlerts} hint="Enabled operational alerts" />

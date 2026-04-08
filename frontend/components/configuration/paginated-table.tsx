@@ -43,7 +43,7 @@ export function PaginationFooter({
   const end = Math.min(page * pageSize, totalRows);
 
   return (
-    <div className="pagination-bar">
+    <div className="pagination-bar motion-pagination-bar">
       <div className="pagination-meta">
         {start}-{end} of {totalRows}
       </div>
@@ -86,7 +86,9 @@ export function TablePanel({
 }) {
   return (
     <>
-      <div className="table-wrap">{table}</div>
+      <div className="table-shell motion-table-shell">
+        <div className="table-wrap">{table}</div>
+      </div>
       {footer}
     </>
   );

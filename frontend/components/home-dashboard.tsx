@@ -391,7 +391,7 @@ export function HomeDashboard({
       eyebrow={dashboard.isFallback ? "Preview Mode" : "Home"}
       heroMode="none"
     >
-      <section className="home-toolbar panel">
+      <section className="home-toolbar panel motion-stage-block">
         <div className="home-toolbar-tabs">
           <button
             className={`home-tab${view === "graphical" ? " home-tab-active" : ""}`}
@@ -414,7 +414,7 @@ export function HomeDashboard({
         </div>
       </section>
 
-      <section className="home-update-strip">
+      <section className="home-update-strip motion-stage-block">
         <span>Last update: {lastUpdateLabel}</span>
         <button className="home-update-link" onClick={() => void handleRunNow()} type="button">
           {loading ? "Running..." : "Run now"}
@@ -425,7 +425,7 @@ export function HomeDashboard({
         {dashboard.isFallback ? <span className="home-preview-flag">Preview dataset</span> : null}
       </section>
 
-      <section className="dashboard-focus-grid">
+      <section className="dashboard-focus-grid motion-stage-block">
         <article className="dashboard-focus-card dashboard-focus-card-primary">
           <div className="dashboard-focus-head">
             <div>
@@ -466,7 +466,7 @@ export function HomeDashboard({
         </article>
       </section>
 
-      <section className="dashboard-filter-strip panel">
+      <section className="dashboard-filter-strip panel motion-stage-block">
         <div className="dashboard-filter-block">
           <span className="dashboard-filter-label">Saved Views</span>
           <div className="dashboard-preset-list">
@@ -533,7 +533,7 @@ export function HomeDashboard({
         </div>
       </section>
 
-      <section className="home-layout">
+      <section className="home-layout motion-stage-block">
         <div className="home-main">
           {view === "graphical" ? (
             <section className="home-widget-grid">

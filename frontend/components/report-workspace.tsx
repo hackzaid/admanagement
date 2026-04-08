@@ -77,7 +77,7 @@ export function ReportWorkspace({
 
   return (
     <AppShell title={report.title} subtitle={report.description} eyebrow={report.category} heroMode="none">
-      <section className="report-stage">
+      <section className="report-stage motion-stage-block">
         <div className="report-stage-copy">
           <span className="report-stage-kicker">{report.category}</span>
           <h2>{report.title}</h2>
@@ -95,7 +95,7 @@ export function ReportWorkspace({
         </div>
       </section>
 
-      <section className="report-filter-bar panel report-filter-bar-primary">
+      <section className="report-filter-bar panel report-filter-bar-primary motion-stage-block">
         <div className="filter-pair filter-pair-soft">
           <span className="filter-label">Domain</span>
           <strong>Active Directory</strong>
@@ -110,7 +110,7 @@ export function ReportWorkspace({
         </div>
       </section>
 
-      <section className="report-filter-bar panel">
+      <section className="report-filter-bar panel motion-stage-block">
         <div className="filter-pair filter-pair-soft">
           <span className="filter-label">Actor filter</span>
           <strong>{filters.actor || "All operators"}</strong>
@@ -130,14 +130,14 @@ export function ReportWorkspace({
         </div>
       </section>
 
-      <section className="card-grid card-grid-four">
+      <section className="card-grid card-grid-four motion-stage-block">
         <StatCard label="Activity rows" value={activityQuery.total_count} hint="Filtered for this report" />
         <StatCard label="Top operators" value={actorBars.length} hint="Unique operators in current slice" tone="accent" />
         <StatCard label="Snapshot runs" value={snapshotRuns.length} hint="Available for comparison" />
         <StatCard label="Current support" value={report.capability.toUpperCase()} hint={supportText} tone={capabilityTone} />
       </section>
 
-      <section className="two-column">
+      <section className="two-column motion-stage-block">
         <SectionPanel title="Change concentration" kicker="Top operators">
           {actorBars.length ? (
             <HorizontalBars data={actorBars} />
@@ -154,7 +154,7 @@ export function ReportWorkspace({
         </SectionPanel>
       </section>
 
-      <section className="two-column">
+      <section className="two-column motion-stage-block">
         <SectionPanel title="Current AD posture" kicker="Snapshot context">
           <div className="mini-list">
             <div className="mini-list-item">

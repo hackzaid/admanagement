@@ -32,7 +32,7 @@ export function ConfigurationNav({ overview }: { overview: ConfigurationOverview
   };
 
   return (
-    <section className="panel config-hub-nav">
+    <section className="panel config-hub-nav motion-stage-block">
       {entries.map((entry) => (
         <Link
           className={`config-hub-link${pathname === entry.href ? " config-hub-link-active" : ""}`}

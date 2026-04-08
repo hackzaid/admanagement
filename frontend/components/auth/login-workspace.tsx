@@ -144,14 +144,16 @@ export function LoginWorkspace() {
                 </p>
               </div>
 
-              <div className="login-floating-card login-floating-card-primary">
-                <span className="login-floating-label">Recorded hosts</span>
-                <strong>RDP + logon source visibility</strong>
-              </div>
+              <div className="login-visual-footer">
+                <div className="login-floating-card login-floating-card-primary">
+                  <span className="login-floating-label">Recorded hosts</span>
+                  <strong>RDP and logon source visibility</strong>
+                </div>
 
-              <div className="login-floating-card login-floating-card-secondary">
-                <span className="login-floating-label">Operational focus</span>
-                <strong>Built for everyday AD administrators</strong>
+                <div className="login-floating-card login-floating-card-secondary">
+                  <span className="login-floating-label">Operational focus</span>
+                  <strong>Built for everyday AD administrators</strong>
+                </div>
               </div>
             </div>
           </section>

@@ -12,7 +12,7 @@ export function StatCard({
   tone?: "default" | "alert" | "accent";
 }) {
   return (
-    <div className={`panel stat-card stat-card-${tone}`}>
+    <div className={`panel stat-card stat-card-${tone} motion-card`}>
       <div className="stat-label">{label}</div>
       <div className="stat-value">{value}</div>
       {hint ? <div className="stat-hint">{hint}</div> : null}
@@ -32,7 +32,7 @@ export function SectionPanel({
   children: ReactNode;
 }) {
   return (
-    <section className="panel section-panel">
+    <section className="panel section-panel motion-panel">
       <div className="section-head">
         <div>
           {kicker ? <div className="section-kicker">{kicker}</div> : null}

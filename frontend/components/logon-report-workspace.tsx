@@ -95,7 +95,7 @@ export function LogonReportWorkspace({
 
   return (
     <AppShell title={report.title} subtitle={report.description} eyebrow={report.category}>
-      <section className="report-filter-bar panel">
+      <section className="report-filter-bar panel motion-stage-block">
         <div className="filter-pair">
           <span className="filter-label">Domain</span>
           <strong>Active Directory</strong>
@@ -110,7 +110,7 @@ export function LogonReportWorkspace({
         </div>
       </section>
 
-      <section className="report-filter-bar panel">
+      <section className="report-filter-bar panel motion-stage-block">
         <div className="filter-pair">
           <span className="filter-label">Actor filter</span>
           <strong>{filters.actor || "All users"}</strong>
@@ -130,7 +130,7 @@ export function LogonReportWorkspace({
         </div>
       </section>
 
-      <section className="card-grid card-grid-four">
+      <section className="card-grid card-grid-four motion-stage-block">
         <StatCard
           label={report.key === "local-logon-logoff" ? "Stored sessions" : "Stored auth events"}
           value={logonSummary.total_count}
@@ -151,7 +151,7 @@ export function LogonReportWorkspace({
       </section>
 
       {report.key === "user-logon-reports" ? (
-        <section className="card-grid card-grid-four">
+        <section className="card-grid card-grid-four motion-stage-block">
           <StatCard
             label="RDP / Remote interactive successes"
             value={rdpSummary?.success_count ?? 0}
@@ -178,7 +178,7 @@ export function LogonReportWorkspace({
         </section>
       ) : null}
 
-      <section className="two-column">
+      <section className="two-column motion-stage-block">
         <SectionPanel title="Top users" kicker={report.key === "local-logon-logoff" ? "Observed session activity" : "Observed identity activity"}>
           <HorizontalBars data={topUsers} />
         </SectionPanel>
@@ -189,7 +189,7 @@ export function LogonReportWorkspace({
 
       {report.key === "user-logon-reports" ? (
         <>
-          <section className="two-column">
+          <section className="two-column motion-stage-block">
             <SectionPanel title="Top failure sources" kicker="Lockouts and failed sign-ins">
               <HorizontalBars tone="amber" data={failureSources.length ? failureSources : logonSummary.top_failure_sources?.map((item) => ({ label: item.source, value: item.count })) ?? []} />
             </SectionPanel>
@@ -208,7 +208,7 @@ export function LogonReportWorkspace({
             </SectionPanel>
           </section>
 
-          <section className="two-column">
+          <section className="two-column motion-stage-block">
             <SectionPanel title="Failed logons by source IP" kicker="Password spray and credential misuse vantage">
               <HorizontalBars
                 tone="amber"
@@ -230,7 +230,7 @@ export function LogonReportWorkspace({
             </SectionPanel>
           </section>
 
-          <section className="two-column">
+          <section className="two-column motion-stage-block">
             <SectionPanel title="RDP recorded hosts" kicker="Which target hosts are producing remote interactive evidence">
               <HorizontalBars
                 data={
@@ -261,7 +261,7 @@ export function LogonReportWorkspace({
             </SectionPanel>
           </section>
 
-          <section className="two-column">
+          <section className="two-column motion-stage-block">
             <SectionPanel title="Stale enabled users" kicker="Accounts that may still be generating auth noise">
               <TablePanel
                 table={
@@ -332,6 +332,7 @@ export function LogonReportWorkspace({
             </SectionPanel>
           </section>
 
+          <div className="motion-stage-block">
           <SectionPanel title="RDP / remote interactive detail" kicker="Logon type 10 rows with source context">
             <TablePanel
               table={
@@ -374,7 +375,9 @@ export function LogonReportWorkspace({
               }
             />
           </SectionPanel>
+          </div>
 
+          <div className="motion-stage-block">
           <SectionPanel title="Stale computers behind auth noise" kicker="Enabled computer accounts without recent sign-in">
             <TablePanel
               table={
@@ -411,9 +414,11 @@ export function LogonReportWorkspace({
               }
             />
           </SectionPanel>
+          </div>
         </>
       ) : null}
 
+      <div className="motion-stage-block">
       <SectionPanel title="Detailed authentication rows" kicker="Recent identity access events">
         <TablePanel
           table={
@@ -458,6 +463,7 @@ export function LogonReportWorkspace({
           }
         />
       </SectionPanel>
+      </div>
     </AppShell>
   );
 }

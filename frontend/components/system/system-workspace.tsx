@@ -153,7 +153,7 @@ export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOv
 
   return (
     <>
-      <section className="card-grid card-grid-four">
+      <section className="card-grid card-grid-four motion-stage-block">
         <StatCard label="Current version" value={`v${overview.health.version}`} hint={overview.health.environment} />
         <StatCard
           label="Latest release"
@@ -174,7 +174,7 @@ export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOv
         />
       </section>
 
-      <section className="two-column">
+      <section className="two-column motion-stage-block">
         <SectionPanel
           title="Release monitoring"
           kicker="Version control"
@@ -231,6 +231,7 @@ export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOv
         </SectionPanel>
       </section>
 
+      <div className="motion-stage-block">
       <SectionPanel title="Scheduler jobs" kicker="Collector operations">
         <TablePanel
           table={
@@ -269,6 +270,7 @@ export function SystemWorkspace({ initialOverview }: { initialOverview: SystemOv
           }
         />
       </SectionPanel>
+      </div>
     </>
   );
 }

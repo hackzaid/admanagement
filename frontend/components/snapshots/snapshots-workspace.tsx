@@ -36,7 +36,7 @@ export function SnapshotsWorkspace({
 
   return (
     <>
-      <section className="report-stage">
+      <section className="report-stage motion-stage-block">
         <div className="report-stage-copy">
           <span className="report-stage-kicker">Directory state and drift</span>
           <h2>Snapshot evidence should explain why the current directory posture is risky, not just count risky objects.</h2>
@@ -57,7 +57,7 @@ export function SnapshotsWorkspace({
         </div>
       </section>
 
-      <section className="card-grid card-grid-four">
+      <section className="card-grid card-grid-four motion-stage-block">
         <StatCard
           label="Latest run id"
           value={summary.run_id ?? "No run"}
@@ -73,7 +73,7 @@ export function SnapshotsWorkspace({
         />
       </section>
 
-      <section className="two-column">
+      <section className="two-column motion-stage-block">
         <SectionPanel title="Privileged group exposure" kicker="Tier 0 oversight">
           <TablePanel
             table={
@@ -222,7 +222,7 @@ export function SnapshotsWorkspace({
         </section>
       </SectionPanel>
 
-      <section className="two-column">
+      <section className="two-column motion-stage-block">
         <SectionPanel title="Stale computers" kicker="Enabled assets lacking recent logon activity">
           <TablePanel
             table={

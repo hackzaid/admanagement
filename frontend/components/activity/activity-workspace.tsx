@@ -20,7 +20,7 @@ export function ActivityWorkspace({
 
   return (
     <>
-      <section className="report-stage">
+      <section className="report-stage motion-stage-block">
         <div className="report-stage-copy">
           <span className="report-stage-kicker">Operational change trail</span>
           <h2>Administrative actions can be traced by operator, object type, source workstation, and recording controller.</h2>
@@ -41,7 +41,7 @@ export function ActivityWorkspace({
         </div>
       </section>
 
-      <section className="card-grid card-grid-three">
+      <section className="card-grid card-grid-three motion-stage-block">
         <StatCard label="Total activity rows" value={summary.total_count ?? 0} hint="Stored in the platform database" />
         <StatCard
           label="Latest action time"
@@ -52,7 +52,7 @@ export function ActivityWorkspace({
         <StatCard label="Delete actions surfaced" value={summary.recent_deletes?.length ?? 0} hint="Recent delete sample size" tone="alert" />
       </section>
 
-      <section className="two-column">
+      <section className="two-column motion-stage-block">
         <SectionPanel title="Most active operators" kicker="Identity concentration">
           <HorizontalBars
             data={(summary.top_actors ?? []).map((item) => ({

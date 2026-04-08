@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 type BarDatum = {
   label: string;
   value: number;
@@ -24,7 +26,11 @@ export function HorizontalBars({
           <div className="bar-track">
             <div
               className={`bar-fill bar-fill-${tone}`}
-              style={{ width: `${Math.max((item.value / maxValue) * 100, 8)}%` }}
+              style={
+                {
+                  "--bar-fill-width": `${Math.max((item.value / maxValue) * 100, 8)}%`,
+                } as CSSProperties
+              }
             />
           </div>
           <div className="bar-value">{item.value}</div>
@@ -47,7 +53,14 @@ export function VerticalBars({ data }: { data: BarDatum[] }) {
             {item.sublabel ? <div className="vbar-sublabel">{item.sublabel}</div> : null}
           </div>
           <div className="vbar-track">
-            <div className="vbar-fill" style={{ width: `${Math.max((item.value / maxValue) * 100, 6)}%` }} />
+            <div
+              className="vbar-fill"
+              style={
+                {
+                  "--vbar-fill-width": `${Math.max((item.value / maxValue) * 100, 6)}%`,
+                } as CSSProperties
+              }
+            />
           </div>
           <div className="vbar-value">{item.value}</div>
         </div>

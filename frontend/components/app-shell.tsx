@@ -219,10 +219,19 @@ export function AppShell({
         <div className="side-stack">
           {menuEntries.map((entry) =>
             entry.type === "group" ? (
-              <section className="side-group" key={entry.label}>
+              <section
+                className={`side-group${openGroups[entry.label] ? " side-group-open" : ""}${entry.children.some((child) => child.href === pathname) ? " side-group-active" : ""}`}
+                key={entry.label}
+              >
                 <button className="side-toggle" onClick={() => toggleGroup(entry.label)} type="button">
-                  <span>{entry.label}</span>
-                  <span className={`toggle-arrow${openGroups[entry.label] ? " toggle-arrow-open" : ""}`}>{">"}</span>
+                  <span className="side-toggle-copy">
+                    <span className="side-toggle-title">{entry.label}</span>
+                    <span className="side-toggle-meta">{entry.children.length} views</span>
+                  </span>
+                  <span className="side-toggle-trailing">
+                    <span className="side-group-count">{entry.children.length}</span>
+                    <span className={`toggle-arrow${openGroups[entry.label] ? " toggle-arrow-open" : ""}`}>{">"}</span>
+                  </span>
                 </button>
                 {openGroups[entry.label] ? (
                   <div className="side-items side-items-nested">
@@ -233,7 +242,9 @@ export function AppShell({
                         key={child.href}
                       >
                         <span className="side-dot" />
-                        <span>{child.label}</span>
+                        <span className="side-item-copy">
+                          <span className="side-item-label">{child.label}</span>
+                        </span>
                         {child.isPlanned ? <span className="side-badge">Planned</span> : null}
                       </Link>
                     ))}
@@ -247,7 +258,9 @@ export function AppShell({
                 key={entry.href}
               >
                 <span className="side-dot" />
-                <span>{entry.label}</span>
+                <span className="side-item-copy">
+                  <span className="side-item-label">{entry.label}</span>
+                </span>
                 <span className="side-chevron">{">"}</span>
               </Link>
             ),
@@ -263,7 +276,7 @@ export function AppShell({
       />
 
       <div className="workspace">
-        <header className="topbar">
+        <header className="topbar motion-shell-topbar">
           <div className="topbar-leading">
             <button
               aria-expanded={navOpen}
@@ -369,7 +382,7 @@ export function AppShell({
         </header>
 
         {visibleUpdateStatus ? (
-          <section className="update-banner">
+          <section className="update-banner motion-banner">
             <div className="update-banner-copy">
               <strong>
                 Update available: {visibleUpdateStatus.latest_version ? `v${visibleUpdateStatus.latest_version}` : visibleUpdateStatus.latest_ref?.slice(0, 7) ?? "new build"}
@@ -402,9 +415,9 @@ export function AppShell({
           </section>
         ) : null}
 
-        <main className="content">
+        <main className="content motion-content">
           {heroMode === "default" ? (
-            <section className="hero-panel">
+            <section className="hero-panel motion-stage-block">
               <div className="hero-copy">
                 <div className="eyebrow">{eyebrow}</div>
                 <h1>{title}</h1>
