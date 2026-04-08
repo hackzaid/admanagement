@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
 import { AuthSession, UpdateStatus, applySystemUpdate, getAuthSession, getUpdateStatus, logoutAuthSession } from "@/lib/api";
 import { getReportDefinitionByPath, menuEntries } from "@/lib/navigation";
@@ -40,6 +40,8 @@ export function AppShell({
   heroMode?: "default" | "none";
 }) {
   const pathname = usePathname();
+  const workspaceMenuRef = useRef<HTMLDivElement | null>(null);
+  const sessionMenuRef = useRef<HTMLDivElement | null>(null);
   const activeReport = getReportDefinitionByPath(pathname);
   const defaultOpenGroups = useMemo(
     () =>
@@ -72,6 +74,39 @@ export function AppShell({
     setWorkspaceMenuOpen(false);
     setSessionMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!workspaceMenuOpen && !sessionMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+      if (workspaceMenuRef.current?.contains(target) || sessionMenuRef.current?.contains(target)) {
+        return;
+      }
+      setWorkspaceMenuOpen(false);
+      setSessionMenuOpen(false);
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setWorkspaceMenuOpen(false);
+        setSessionMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [workspaceMenuOpen, sessionMenuOpen]);
 
   useEffect(() => {
     let active = true;
@@ -152,6 +187,7 @@ export function AppShell({
   const visibleUpdateStatus = showUpdateBanner ? updateStatus : null;
   const activePrimaryNav = primaryNav.find((item) => isPrimaryNavActive(pathname, item.href)) ?? primaryNav[0];
   const sessionDisplayLabel = session?.display_name || session?.username || "Signed out";
+  const sessionCompactLabel = session?.display_name?.split(" ")[0] || session?.username || "Session";
   const sessionAvatarLabel = sessionDisplayLabel.slice(0, 1).toUpperCase();
 
   const dismissUpdateBanner = () => {
@@ -242,7 +278,7 @@ export function AppShell({
             >
               Menu
             </button>
-            <div className="topbar-route-shell">
+            <div className="topbar-route-shell" ref={workspaceMenuRef}>
               <div className="topbar-route-label-row">
                 <div className="topbar-route-label">Workspace</div>
                 <button
@@ -277,7 +313,7 @@ export function AppShell({
               </div>
             </div>
           </div>
-          <div className="topbar-actions">
+          <div className="topbar-actions" ref={sessionMenuRef}>
             <button
               aria-controls="topbar-session-drawer"
               aria-expanded={sessionMenuOpen}
@@ -290,7 +326,7 @@ export function AppShell({
             >
               <span className="topbar-identity-avatar">{sessionAvatarLabel}</span>
               <span className="topbar-mobile-toggle-copy">
-                <strong>{sessionDisplayLabel}</strong>
+                <strong>{sessionCompactLabel}</strong>
                 <span>{buildStatusLabel}</span>
               </span>
               <span className={`topbar-mobile-toggle-indicator${sessionMenuOpen ? " topbar-mobile-toggle-indicator-open" : ""}`}>

@@ -2145,21 +2145,32 @@ a {
   text-transform: uppercase;
 }
 
-.topbar-mobile-section-toggle,
-.topbar-mobile-profile-toggle {
+.topbar-mobile-section-toggle {
   display: none;
+}
+
+.topbar-mobile-profile-toggle {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 12px;
+  gap: 8px;
+  width: auto;
+  max-width: min(320px, 100%);
+  padding: 8px 10px;
   border: 1px solid rgba(172, 186, 201, 0.38);
-  border-radius: 16px;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.82);
   color: #2f3f4b;
   font: inherit;
   text-align: left;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
   cursor: pointer;
+  flex: 0 1 auto;
+}
+
+.topbar-mobile-profile-toggle .topbar-identity-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
 }
 
 .topbar-mobile-profile-toggle-attention {
@@ -2177,11 +2188,17 @@ a {
 .topbar-mobile-toggle-copy strong {
   font-size: 0.9rem;
   color: #203140;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .topbar-mobile-toggle-copy span {
   color: var(--muted);
   font-size: 0.76rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .topbar-mobile-toggle-indicator {
@@ -2238,35 +2255,49 @@ a {
 }
 
 .topbar-actions {
-  gap: 14px;
-  min-width: 0;
-}
-
-.topbar-action-drawer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
-  padding: 8px 12px;
-  border: 1px solid rgba(172, 186, 201, 0.38);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.72);
+  gap: 14px;
+  margin-left: auto;
   min-width: 0;
-  flex-wrap: wrap;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.topbar-action-drawer {
+  display: none;
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 25;
+  width: min(420px, calc(100vw - 48px));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(172, 186, 201, 0.38);
+  border-radius: 18px;
+  background: rgba(252, 253, 255, 0.96);
+  min-width: 0;
+  box-shadow: 0 20px 36px rgba(17, 31, 46, 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.topbar-action-drawer-open {
+  display: grid;
 }
 
 .topbar-context {
+  display: grid;
   gap: 12px;
   padding: 0;
   border: 0;
   background: transparent;
   min-width: 0;
-  flex: 1 1 auto;
 }
 
 .topbar-identity-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
 }
 
@@ -2297,13 +2328,11 @@ a {
 }
 
 .topbar-runtime-compact {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-left: 12px;
-  border-left: 1px solid rgba(172, 186, 201, 0.42);
-  flex-wrap: wrap;
+  display: grid;
+  gap: 6px;
   min-width: 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(172, 186, 201, 0.42);
 }
 
 .topbar-runtime-pill {
@@ -2341,10 +2370,11 @@ a {
 }
 
 .topbar-button-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  padding-left: 12px;
-  border-left: 1px solid rgba(172, 186, 201, 0.42);
-  flex: 0 0 auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(172, 186, 201, 0.42);
 }
 
 .topbar-utility-button {
@@ -2732,6 +2762,38 @@ a {
   }
 }
 
+@media (max-width: 1180px) {
+  .topbar-route-label {
+    display: none;
+  }
+
+  .topbar-mobile-section-toggle {
+    display: flex;
+  }
+
+  .topbar-links {
+    display: none;
+    width: 100%;
+    overflow: visible;
+    padding: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .topbar-links-open {
+    display: grid;
+  }
+
+  .topbar-link {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+  }
+}
+
 @media (max-width: 920px) {
   .topbar,
   .hero-panel {
@@ -2756,43 +2818,28 @@ a {
     gap: 10px;
   }
 
-  .topbar-mobile-section-toggle,
   .topbar-mobile-profile-toggle {
-    display: flex;
-  }
-
-  .topbar-route-label {
-    display: none;
+    width: 100%;
+    max-width: none;
+    padding: 9px 10px;
+    border-radius: 16px;
   }
 
   .topbar-links {
-    display: none;
-    width: 100%;
-    overflow: visible;
-    padding: 10px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .topbar-links-open {
-    display: grid;
-  }
-
-  .topbar-link {
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    white-space: normal;
   }
 
   .topbar-action-drawer {
     display: none;
+    position: static;
+    top: auto;
+    right: auto;
     width: 100%;
     padding: 12px;
     grid-template-columns: 1fr;
     gap: 10px;
+    box-shadow: none;
+    backdrop-filter: none;
   }
 
   .topbar-action-drawer-open {
