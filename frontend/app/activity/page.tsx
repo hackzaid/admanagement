@@ -1,7 +1,10 @@
+import dynamic from "next/dynamic";
+
 import { AppShell } from "@/components/app-shell";
-import { ActivityWorkspace } from "@/components/activity/activity-workspace";
 import { getActivitySummary, getRecentActivity } from "@/lib/api";
 import { requireAuthOrRedirect } from "@/lib/auth";
+
+const ActivityWorkspace = dynamic(() => import("@/components/activity/activity-workspace").then((module) => module.ActivityWorkspace));
 
 export default async function ActivityPage() {
   await requireAuthOrRedirect();

@@ -144,6 +144,7 @@ a {
   min-height: 0;
   flex: 1 1 auto;
   overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 4px;
   scrollbar-width: thin;
   scrollbar-color: rgba(93, 108, 124, 0.42) transparent;
@@ -169,10 +170,13 @@ a {
 .side-group {
   display: grid;
   gap: 6px;
+  width: 100%;
+  max-width: 100%;
   padding: 6px;
   border: 1px solid transparent;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
   transition:
     border-color 160ms ease,
     background-color 160ms ease,
@@ -203,11 +207,18 @@ a {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .side-items-nested {
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   padding: 6px 0 4px 12px;
+  overflow-x: hidden;
 }
 
 .side-items-nested::before {
@@ -224,6 +235,8 @@ a {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
   padding: 11px 12px;
   border: 1px solid rgba(172, 186, 201, 0.16);
@@ -294,6 +307,7 @@ a {
 
 .side-toggle {
   width: 100%;
+  max-width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3367,6 +3381,84 @@ a {
   background: rgba(255, 255, 255, 0.8);
 }
 
+.loading-stage,
+.loading-panel,
+.loading-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-panel,
+.loading-card {
+  min-height: 148px;
+  padding: 18px;
+  border: 1px solid rgba(172, 186, 201, 0.34);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(244, 248, 253, 0.9));
+  box-shadow: 0 16px 32px rgba(18, 35, 58, 0.05);
+}
+
+.loading-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.loading-panel-head,
+.loading-stack,
+.loading-table,
+.loading-metric {
+  display: grid;
+  gap: 10px;
+}
+
+.loading-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.loading-line {
+  position: relative;
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(211, 220, 230, 0.72);
+  overflow: hidden;
+}
+
+.loading-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.78) 48%, transparent 100%);
+  animation: shimmerSweep 1.45s ease-in-out infinite;
+}
+
+.loading-line-short {
+  width: 28%;
+}
+
+.loading-line-medium {
+  width: 54%;
+}
+
+.loading-line-long {
+  width: 82%;
+}
+
+.loading-line-wide {
+  width: min(82%, 640px);
+  height: 18px;
+}
+
+.loading-line-wide-soft {
+  width: min(68%, 540px);
+  height: 18px;
+}
+
 .report-filter-bar-primary {
   margin-bottom: 14px;
 }
@@ -3497,6 +3589,15 @@ a {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes shimmerSweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
   }
 }
 
@@ -3650,7 +3751,8 @@ a {
   .vbar-fill,
   .donut-chart,
   .line-chart-path,
-  .line-chart-dot {
+  .line-chart-dot,
+  .loading-line::after {
     animation: none !important;
   }
 

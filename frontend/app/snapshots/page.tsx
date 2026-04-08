@@ -1,7 +1,10 @@
+import dynamic from "next/dynamic";
+
 import { AppShell } from "@/components/app-shell";
-import { SnapshotsWorkspace } from "@/components/snapshots/snapshots-workspace";
 import { getSnapshotFindings, getSnapshotRuns, getSnapshotSummary } from "@/lib/api";
 import { requireAuthOrRedirect } from "@/lib/auth";
+
+const SnapshotsWorkspace = dynamic(() => import("@/components/snapshots/snapshots-workspace").then((module) => module.SnapshotsWorkspace));
 
 export default async function SnapshotsPage() {
   await requireAuthOrRedirect();

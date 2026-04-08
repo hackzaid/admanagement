@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
+import dynamicImport from "next/dynamic";
 
-import { HomeDashboard } from "@/components/home-dashboard";
 import { getDashboardOverviewFiltered, getSavedDashboardViews, getSavedReports, getSetupStatus } from "@/lib/api";
 import { requireAuthOrRedirect } from "@/lib/auth";
 import { buildDashboardApiParams, buildFilterStateFromSearch } from "@/lib/dashboard-filters";
+
+const HomeDashboard = dynamicImport(() => import("@/components/home-dashboard").then((module) => module.HomeDashboard));
 
 export const dynamic = "force-dynamic";
 

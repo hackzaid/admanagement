@@ -1,7 +1,10 @@
+import dynamic from "next/dynamic";
+
 import { AppShell } from "@/components/app-shell";
-import { SystemWorkspace } from "@/components/system/system-workspace";
 import { getSystemOverview } from "@/lib/api";
 import { requireAuthOrRedirect } from "@/lib/auth";
+
+const SystemWorkspace = dynamic(() => import("@/components/system/system-workspace").then((module) => module.SystemWorkspace));
 
 export default async function SystemPage() {
   await requireAuthOrRedirect();

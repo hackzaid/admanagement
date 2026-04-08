@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
+import dynamic from "next/dynamic";
 
-import { LogonReportWorkspace } from "@/components/logon-report-workspace";
-import { ReportWorkspace } from "@/components/report-workspace";
 import {
   getActivityQuery,
   getLogonQuery,
@@ -12,6 +11,13 @@ import {
 } from "@/lib/api";
 import { requireAuthOrRedirect } from "@/lib/auth";
 import { getReportDefinitionBySlug } from "@/lib/navigation";
+
+const LogonReportWorkspace = dynamic(() =>
+  import("@/components/logon-report-workspace").then((module) => module.LogonReportWorkspace),
+);
+const ReportWorkspace = dynamic(() =>
+  import("@/components/report-workspace").then((module) => module.ReportWorkspace),
+);
 
 export default async function ReportPage({
   params,
