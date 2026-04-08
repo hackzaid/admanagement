@@ -166,6 +166,27 @@ Setup endpoints:
 - `POST /api/setup/test-winrm`
 - `POST /api/setup/bootstrap`
 
+## Access Control
+
+Authentication uses Active Directory credentials, but sign-in is restricted to authorized administrators.
+
+By default, the console allows members of:
+
+- `Domain Admins`
+- `Enterprise Admins`
+- `Administrators`
+- `DnsAdmins`
+- `Group Policy Creator Owners`
+
+You can override this with:
+
+- `ADMANAGEMENT_AUTH_ALLOWED_GROUPS`
+- `ADMANAGEMENT_AUTH_ALLOWED_USERS`
+
+`ADMANAGEMENT_AUTH_ALLOWED_USERS` accepts usernames only, for example `["degesa","alice"]`.
+
+This keeps AD as the source of truth for access and avoids introducing a separate invite workflow and SMTP dependency unless you explicitly decide to add that later.
+
 ## Required Environment Settings
 
 Start from `.env.example` and update the values for your environment.

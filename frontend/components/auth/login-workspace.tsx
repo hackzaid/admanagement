@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -33,78 +34,26 @@ export function LoginWorkspace() {
 
   return (
     <div className="login-screen">
-      <div className="login-backdrop">
-        <div className="login-grid-glow" />
-        <div className="login-orb login-orb-primary" />
-        <div className="login-orb login-orb-secondary" />
-        <div className="login-orb login-orb-tertiary" />
-      </div>
-
       <main className="login-viewport">
-        <div className="login-frame panel">
-          <section className="login-visual">
-            <div className="login-visual-copy">
-              <div className="brand-mark">
-                <div className="brand-ring" />
-                <div>
-                  <div className="brand-title">AD Management</div>
-                  <div className="brand-subtitle">Directory Audit Console</div>
-                </div>
-              </div>
-
-              <div className="login-visual-kicker">Directory Operations</div>
-              <h1 className="login-visual-title">
-                Stay ahead of privileged change, stale identity risk, and noisy authentication failures.
-              </h1>
-              <p className="login-visual-text">
-                Built for everyday administrators who need one clear surface for Active Directory activity, compliance drift,
-                and source-aware access monitoring.
-              </p>
-            </div>
-
-            <div className="login-scene">
-              <div className="login-scene-panel login-scene-panel-primary">
-                <div className="login-scene-label">Signal</div>
-                <strong>Authentication + Change Intelligence</strong>
-                <span>
-                  Track failed logons, RDP origin, stale objects, and administrative change concentration.
-                </span>
-              </div>
-
-              <div className="login-scene-panel login-scene-panel-secondary">
-                <div className="login-scene-stat">
-                  <span>Source-aware</span>
-                  <strong>IP + workstation attribution</strong>
-                </div>
-                <div className="login-scene-stat">
-                  <span>Operational</span>
-                  <strong>Built for live AD environments</strong>
-                </div>
-              </div>
-
-              <div className="login-scene-grid">
-                <div className="login-scene-card">
-                  <span className="login-scene-card-label">Failed Logons</span>
-                  <strong>Pivot by source IP</strong>
-                </div>
-                <div className="login-scene-card">
-                  <span className="login-scene-card-label">RDP Evidence</span>
-                  <strong>Track recorded hosts</strong>
-                </div>
-                <div className="login-scene-card">
-                  <span className="login-scene-card-label">Directory Drift</span>
-                  <strong>Stale and risky accounts</strong>
-                </div>
-              </div>
-            </div>
-          </section>
-
+        <div className="login-frame">
           <section className="login-card">
             <header className="login-branding">
-              <div className="eyebrow">Identity Awareness</div>
-              <h2 className="login-form-title">Sign In</h2>
+              <div className="login-brand-row">
+                <div className="brand-mark login-brand-mark">
+                  <div className="brand-ring" />
+                  <div>
+                    <div className="brand-title">AD Management</div>
+                    <div className="brand-subtitle">Directory Audit Console</div>
+                  </div>
+                </div>
+              </div>
+
+              <h2 className="login-form-title">Sign in</h2>
               <p className="login-form-copy">
-                Use your AD username and password to access the operational console.
+                Access the console with your Active Directory username and password.
+              </p>
+              <p className="login-support-copy">
+                Authorized administrators only. Username only, for example <strong>degesa</strong>.
               </p>
             </header>
 
@@ -140,15 +89,71 @@ export function LoginWorkspace() {
                 </label>
               </div>
 
-              <button className="dashboard-apply-button login-submit" disabled={loading || !username.trim() || !password} type="submit">
-                {loading ? "Authenticating..." : "Sign In to Console"}
+              <div className="login-remember-row">
+                <label className="login-check">
+                  <input type="checkbox" defaultChecked />
+                  <span>Remember this device</span>
+                </label>
+                <span className="login-inline-note">Session audit active</span>
+              </div>
+
+              <button className="login-submit" disabled={loading || !username.trim() || !password} type="submit">
+                {loading ? "Authenticating..." : "Sign in"}
               </button>
+
+              <div className="login-divider">
+                <span>Directory-backed access</span>
+              </div>
+
+              <div className="login-meta-list">
+                <div className="login-meta-item">
+                  <span>Auth source</span>
+                  <strong>Active Directory</strong>
+                </div>
+                <div className="login-meta-item">
+                  <span>Use case</span>
+                  <strong>Operations and audit</strong>
+                </div>
+              </div>
             </form>
 
             <footer className="login-footer">
-              <div className="config-meta">Protected Information System | Session Audit Active</div>
-              <div className="login-footer-note">Slate console theme | AD-backed access</div>
+              <div className="config-meta">Protected operational system</div>
+              <div className="login-footer-note">All access is validated against your current directory credentials.</div>
             </footer>
+          </section>
+
+          <section className="login-visual">
+            <div className="login-photo-frame">
+              <Image
+                alt="Professional working on a laptop in a modern office"
+                className="login-photo"
+                fill
+                priority
+                sizes="(max-width: 1120px) 100vw, 58vw"
+                src="/login-hero.jpg"
+              />
+              <div className="login-photo-overlay" />
+              <div className="login-visual-copy">
+                <div className="login-visual-kicker">Live directory operations</div>
+                <h1 className="login-visual-title">
+                  One trusted surface for AD access evidence, change intelligence, and risk posture.
+                </h1>
+                <p className="login-visual-text">
+                  Track failed logons, privileged changes, stale identity drift, and RDP evidence from the systems that matter.
+                </p>
+              </div>
+
+              <div className="login-floating-card login-floating-card-primary">
+                <span className="login-floating-label">Recorded hosts</span>
+                <strong>RDP + logon source visibility</strong>
+              </div>
+
+              <div className="login-floating-card login-floating-card-secondary">
+                <span className="login-floating-label">Operational focus</span>
+                <strong>Built for everyday AD administrators</strong>
+              </div>
+            </div>
           </section>
         </div>
       </main>

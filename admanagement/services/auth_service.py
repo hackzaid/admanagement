@@ -63,6 +63,14 @@ class AuthService:
             if not self._try_user_bind(server, user_dn, password):
                 if not user_principal_name or not self._try_user_bind(server, user_principal_name, password):
                     raise AuthenticationError("Invalid username or password.")
+
+            if not self._is_authorized_administrator(
+                connection=service_connection,
+                username=normalized,
+                user_dn=user_dn,
+                base_dn=base_dn,
+            ):
+                raise AuthenticationError("Access is restricted to authorized administrators.")
         finally:
             service_connection.unbind()
 
@@ -147,6 +155,43 @@ class AuthService:
             return connection.bind()
         finally:
             connection.unbind()
+
+    def _is_authorized_administrator(
+        self,
+        *,
+        connection: Connection,
+        username: str,
+        user_dn: str,
+        base_dn: str,
+    ) -> bool:
+        allowed_users = {self._normalize_username(item) for item in self.settings.auth_allowed_users if item.strip()}
+        if username in allowed_users:
+            return True
+
+        allowed_groups = [item.strip() for item in self.settings.auth_allowed_groups if item.strip()]
+        if not allowed_groups:
+            return False
+
+        group_filters = "".join(
+            f"(cn={self._escape_ldap_filter(group_name)})"
+            for group_name in allowed_groups
+        )
+        search_filter = (
+            "(&"
+            "(objectClass=group)"
+            f"(|{group_filters})"
+            f"(member:1.2.840.113556.1.4.1941:={self._escape_ldap_filter(user_dn)})"
+            ")"
+        )
+        return bool(
+            connection.search(
+                search_base=base_dn,
+                search_filter=search_filter,
+                attributes=["cn"],
+                size_limit=1,
+            )
+            and connection.entries
+        )
 
     def _normalize_username(self, value: str) -> str:
         cleaned = value.strip()

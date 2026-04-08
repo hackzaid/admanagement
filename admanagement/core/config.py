@@ -73,6 +73,16 @@ class Settings(BaseSettings):
     update_host_project_path: str = "/host/app"
     update_runner_image: str = "admanagement-backend"
     auth_session_hours: int = 12
+    auth_allowed_groups: list[str] = Field(
+        default_factory=lambda: [
+            "Domain Admins",
+            "Enterprise Admins",
+            "Administrators",
+            "DnsAdmins",
+            "Group Policy Creator Owners",
+        ]
+    )
+    auth_allowed_users: list[str] = Field(default_factory=list)
 
 
 @lru_cache
