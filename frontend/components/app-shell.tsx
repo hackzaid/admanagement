@@ -16,6 +16,16 @@ const primaryNav = [
   { href: "/system", label: "System" },
 ];
 
+function isPrimaryNavActive(pathname: string, href: string) {
+  if (href === "/") {
+    return pathname === "/";
+  }
+  if (href === "/reports/account-management/all-ad-changes") {
+    return pathname.startsWith("/reports");
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function AppShell({
   children,
   title,
@@ -45,6 +55,8 @@ export function AppShell({
   );
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(defaultOpenGroups);
   const [navOpen, setNavOpen] = useState(false);
+  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
+  const [sessionMenuOpen, setSessionMenuOpen] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [updateChecking, setUpdateChecking] = useState(false);
   const [updateApplying, setUpdateApplying] = useState(false);
@@ -57,6 +69,8 @@ export function AppShell({
 
   useEffect(() => {
     setNavOpen(false);
+    setWorkspaceMenuOpen(false);
+    setSessionMenuOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -132,10 +146,13 @@ export function AppShell({
   const trackedBranchLabel = updateStatus?.branch || "main";
   const repositoryLabel = updateStatus?.repository?.split("/").slice(-1)[0] || "admanagement";
   const currentBuildLabel = updateStatus?.current_ref?.slice(0, 7) ?? `v${updateStatus?.current_version ?? "0.1.0"}`;
-  const compactRuntimeLabel = `${trackedBranchLabel} · ${currentBuildLabel}`;
+  const compactRuntimeLabel = `${trackedBranchLabel} | ${currentBuildLabel}`;
   const latestUpdateKey = updateStatus?.latest_ref || updateStatus?.latest_version || "";
   const showUpdateBanner = Boolean(updateStatus?.update_available && latestUpdateKey && dismissedUpdateKey !== latestUpdateKey);
   const visibleUpdateStatus = showUpdateBanner ? updateStatus : null;
+  const activePrimaryNav = primaryNav.find((item) => isPrimaryNavActive(pathname, item.href)) ?? primaryNav[0];
+  const sessionDisplayLabel = session?.display_name || session?.username || "Signed out";
+  const sessionAvatarLabel = sessionDisplayLabel.slice(0, 1).toUpperCase();
 
   const dismissUpdateBanner = () => {
     if (!latestUpdateKey || typeof window === "undefined") {
@@ -216,17 +233,41 @@ export function AppShell({
               aria-expanded={navOpen}
               aria-label="Open navigation"
               className="nav-toggle"
-              onClick={() => setNavOpen((current) => !current)}
+              onClick={() => {
+                setNavOpen((current) => !current);
+                setWorkspaceMenuOpen(false);
+                setSessionMenuOpen(false);
+              }}
               type="button"
             >
               Menu
             </button>
             <div className="topbar-route-shell">
-              <div className="topbar-route-label">Workspace</div>
-              <div className="topbar-links">
+              <div className="topbar-route-label-row">
+                <div className="topbar-route-label">Workspace</div>
+                <button
+                  aria-controls="topbar-workspace-links"
+                  aria-expanded={workspaceMenuOpen}
+                  className="topbar-mobile-section-toggle"
+                  onClick={() => {
+                    setWorkspaceMenuOpen((current) => !current);
+                    setSessionMenuOpen(false);
+                  }}
+                  type="button"
+                >
+                  <span className="topbar-mobile-toggle-copy">
+                    <strong>{activePrimaryNav.label}</strong>
+                    <span>Workspace sections</span>
+                  </span>
+                  <span className={`topbar-mobile-toggle-indicator${workspaceMenuOpen ? " topbar-mobile-toggle-indicator-open" : ""}`}>
+                    {workspaceMenuOpen ? "Close" : "Sections"}
+                  </span>
+                </button>
+              </div>
+              <div className={`topbar-links${workspaceMenuOpen ? " topbar-links-open" : ""}`} id="topbar-workspace-links">
                 {primaryNav.map((item) => (
                   <Link
-                    className={`topbar-link${pathname === item.href ? " topbar-link-active" : ""}`}
+                    className={`topbar-link${isPrimaryNavActive(pathname, item.href) ? " topbar-link-active" : ""}`}
                     href={item.href}
                     key={item.href}
                   >
@@ -237,37 +278,56 @@ export function AppShell({
             </div>
           </div>
           <div className="topbar-actions">
-            <div className="topbar-context">
-              <div className="topbar-identity-card">
-                <div className="topbar-identity-avatar">
-                  {(session?.display_name || session?.username || "AD").slice(0, 1).toUpperCase()}
+            <button
+              aria-controls="topbar-session-drawer"
+              aria-expanded={sessionMenuOpen}
+              className={`topbar-mobile-profile-toggle${updateStatus?.update_available ? " topbar-mobile-profile-toggle-attention" : ""}`}
+              onClick={() => {
+                setSessionMenuOpen((current) => !current);
+                setWorkspaceMenuOpen(false);
+              }}
+              type="button"
+            >
+              <span className="topbar-identity-avatar">{sessionAvatarLabel}</span>
+              <span className="topbar-mobile-toggle-copy">
+                <strong>{sessionDisplayLabel}</strong>
+                <span>{buildStatusLabel}</span>
+              </span>
+              <span className={`topbar-mobile-toggle-indicator${sessionMenuOpen ? " topbar-mobile-toggle-indicator-open" : ""}`}>
+                {sessionMenuOpen ? "Close" : "Controls"}
+              </span>
+            </button>
+            <div className={`topbar-action-drawer${sessionMenuOpen ? " topbar-action-drawer-open" : ""}`} id="topbar-session-drawer">
+              <div className="topbar-context">
+                <div className="topbar-identity-card">
+                  <div className="topbar-identity-avatar">{sessionAvatarLabel}</div>
+                  <div className="topbar-identity">
+                    {session ? (
+                      <>
+                        <strong>{session.display_name || session.username}</strong>
+                        <span>{session.username}</span>
+                      </>
+                    ) : (
+                      <span>Signed out</span>
+                    )}
+                  </div>
                 </div>
-                <div className="topbar-identity">
-                  {session ? (
-                    <>
-                      <strong>{session.display_name || session.username}</strong>
-                      <span>{session.username}</span>
-                    </>
-                  ) : (
-                    <span>Signed out</span>
-                  )}
+                <div className="topbar-runtime-compact">
+                  <span className={`topbar-runtime-pill${updateStatus?.update_available ? " topbar-runtime-pill-attention" : ""}`}>
+                    {buildStatusLabel}
+                  </span>
+                  <span className="topbar-runtime-meta">{compactRuntimeLabel}</span>
+                  <span className="topbar-runtime-repo">{repositoryLabel}</span>
                 </div>
               </div>
-              <div className="topbar-runtime-compact">
-                <span className={`topbar-runtime-pill${updateStatus?.update_available ? " topbar-runtime-pill-attention" : ""}`}>
-                  {buildStatusLabel}
-                </span>
-                <span className="topbar-runtime-meta">{compactRuntimeLabel}</span>
-                <span className="topbar-runtime-repo">{repositoryLabel}</span>
+              <div className="topbar-button-group">
+                <button className="topbar-utility-button" onClick={() => void refreshUpdateStatus()} type="button">
+                  {updateChecking ? "Checking..." : "Check updates"}
+                </button>
+                <button className="topbar-utility-button topbar-utility-button-secondary" onClick={() => void logout()} type="button">
+                  Sign out
+                </button>
               </div>
-            </div>
-            <div className="topbar-button-group">
-              <button className="topbar-utility-button" onClick={() => void refreshUpdateStatus()} type="button">
-                {updateChecking ? "Checking..." : "Check updates"}
-              </button>
-              <button className="topbar-utility-button topbar-utility-button-secondary" onClick={() => void logout()} type="button">
-                Sign out
-              </button>
             </div>
           </div>
         </header>
