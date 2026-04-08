@@ -36,6 +36,18 @@ export type SnapshotFindingQueryResult = {
   rows: SnapshotFindingRow[];
 };
 
+export type SnapshotDrift = {
+  baseline_run_id: string;
+  target_run_id: string;
+  object_count_delta: Record<string, { baseline_count: number; target_count: number; delta: number }>;
+  status_changes: {
+    enabled_to_disabled: Array<{ object_type: string; name: string; distinguished_name?: string | null }>;
+    disabled_to_enabled: Array<{ object_type: string; name: string; distinguished_name?: string | null }>;
+  };
+  privileged_membership_changes: Record<string, { added_members: string[]; removed_members: string[] }>;
+  target_findings?: SnapshotSummary["findings"];
+};
+
 export type SchedulerStatus = {
   enabled: boolean;
   running: boolean;
@@ -686,6 +698,23 @@ export async function getSnapshotFindings(params: {
       offset: params.offset ?? 0,
       rows: [],
     };
+  }
+}
+
+export async function getSnapshotDrift(params: {
+  baselineRunId: string;
+  targetRunId?: string;
+  staleDays?: number;
+}): Promise<SnapshotDrift | null> {
+  const query = new URLSearchParams();
+  query.set("baseline_run_id", params.baselineRunId);
+  if (params.targetRunId) query.set("target_run_id", params.targetRunId);
+  if (params.staleDays) query.set("stale_days", String(params.staleDays));
+
+  try {
+    return await fetchJson<SnapshotDrift>(`/api/snapshots/drift?${query.toString()}`);
+  } catch {
+    return null;
   }
 }
 

@@ -5,6 +5,7 @@ import {
   getActivityQuery,
   getLogonQuery,
   getLogonSummary,
+  getSnapshotDrift,
   getSnapshotFindings,
   getSnapshotRuns,
   getSnapshotSummary,
@@ -17,6 +18,9 @@ const LogonReportWorkspace = dynamic(() =>
 );
 const ReportWorkspace = dynamic(() =>
   import("@/components/report-workspace").then((module) => module.ReportWorkspace),
+);
+const ConfigurationAuditWorkspace = dynamic(() =>
+  import("@/components/reports/configuration-audit-workspace").then((module) => module.ConfigurationAuditWorkspace),
 );
 
 export default async function ReportPage({
@@ -91,6 +95,32 @@ export default async function ReportPage({
           endTimeUtc: filters.end,
           eventTypes: Array.from(eventTypes),
         }}
+      />
+    );
+  }
+
+  if (report.key === "configuration-auditing") {
+    const [summary, runs] = await Promise.all([getSnapshotSummary(), getSnapshotRuns()]);
+    const [staleUsers, staleComputers, nonExpiring, privilegedMembers, drift] = await Promise.all([
+      getSnapshotFindings({ finding: "stale_users", limit: 100 }),
+      getSnapshotFindings({ finding: "stale_computers", limit: 100 }),
+      getSnapshotFindings({ finding: "password_never_expires", limit: 100 }),
+      getSnapshotFindings({ finding: "privileged_group_members", limit: 100 }),
+      runs.length > 1
+        ? getSnapshotDrift({ baselineRunId: runs[1].run_id, targetRunId: runs[0].run_id })
+        : Promise.resolve(null),
+    ]);
+
+    return (
+      <ConfigurationAuditWorkspace
+        report={report}
+        summary={summary}
+        runs={runs}
+        staleUsers={staleUsers}
+        staleComputers={staleComputers}
+        nonExpiringUsers={nonExpiring}
+        privilegedMembers={privilegedMembers}
+        drift={drift}
       />
     );
   }

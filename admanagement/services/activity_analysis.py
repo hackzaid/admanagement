@@ -533,6 +533,7 @@ class ActivityAnalysisService:
             "gpo-setting-changes": ("GPO", "Modify"),
             "dns-changes": ("DNS", None),
             "permission-changes": ("Other", "Modify"),
+            "other-ad-object-changes": ("Other", None),
             "all-ad-changes-on-dcs": (None, None),
             "all-ad-changes": (None, None),
             "all-ad-changes-by-user": (None, None),

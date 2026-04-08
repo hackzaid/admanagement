@@ -96,6 +96,13 @@ REPORT_CATALOG: list[dict[str, Any]] = [
         "capability": "activity",
     },
     {
+        "key": "other-ad-object-changes",
+        "title": "Other AD Object Changes",
+        "category": "Directory Structure",
+        "href": "/reports/other-ad-object-changes",
+        "capability": "activity",
+    },
+    {
         "key": "configuration-auditing",
         "title": "Configuration Auditing",
         "category": "Compliance",
