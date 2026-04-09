@@ -155,6 +155,7 @@ export type DashboardOverview = {
   snapshot_summary: SnapshotSummary;
   activity_summary: MetricSummary;
   logon_summary: LogonSummary;
+  error?: string | null;
   filters?: {
     start_time_utc?: string | null;
     end_time_utc?: string | null;
@@ -416,7 +417,7 @@ function describeNetworkError(error: unknown, apiBaseUrl: string, path: string) 
   return `Could not reach the API at ${endpoint}. Check NEXT_PUBLIC_API_BASE_URL, backend connectivity, and allowed frontend origins.`;
 }
 
-async function fetchJson<T>(path: string): Promise<T> {
+async function fetchJson<T>(path: string, options?: { timeoutMs?: number }): Promise<T> {
   const apiBaseUrl = getApiBaseUrl();
   const headers = await getRequestHeaders();
   let response: Response;
@@ -424,7 +425,7 @@ async function fetchJson<T>(path: string): Promise<T> {
     response = await fetch(buildApiUrl(path), {
       headers,
       next: { revalidate: 30 },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(options?.timeoutMs ?? 5000),
     });
   } catch (error) {
     throw new Error(describeNetworkError(error, apiBaseUrl, path));
@@ -557,84 +558,39 @@ export async function getDashboardOverviewFiltered(params?: {
   const suffix = query.size ? `?${query.toString()}` : "";
 
   try {
-    return await fetchJson<DashboardOverview>(`/api/dashboard${suffix}`);
-  } catch {
+    return await fetchJson<DashboardOverview>(`/api/dashboard${suffix}`, { timeoutMs: 20000 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Dashboard data is unavailable.";
     return {
       snapshot_summary: {
-        run_id: "preview-mode",
+        run_id: null,
         captured_at_utc: null,
-        counts: { user: 1519, computer: 887, group: 85, privileged_group: 5 },
-        findings: {
-          stale_users: { count: 135, sample: [] },
-          stale_computers: { count: 526, sample: [] },
-          password_never_expires: { count: 7, sample: [] },
-          privileged_groups: {
-            "Domain Admins": { member_count: 12, sample_members: ["degesa", "ldapreset", "sccmadmin"] },
-            "Enterprise Admins": { member_count: 10, sample_members: ["degesa", "mnabulya", "fnabunya"] },
-            Administrators: { member_count: 14, sample_members: ["SCCM Administrator", "degesa", "Faith Nabunya"] },
-          },
-        },
+        counts: {},
+        findings: {},
       },
       activity_summary: {
-        total_count: 619,
-        latest_activity_time_utc: "Preview mode",
-        top_actors: [
-          { actor: "degesa", count: 1808 },
-          { actor: "gamito", count: 220 },
-          { actor: "mnabulya", count: 175 },
-          { actor: "fnabunya", count: 88 },
-        ],
-        action_counts: [
-          { target_type: "Computer", action: "Modify", count: 3006 },
-          { target_type: "User", action: "Modify", count: 1085 },
-          { target_type: "User", action: "Delete", count: 52 },
-          { target_type: "User", action: "Create", count: 16 },
-        ],
+        total_count: 0,
+        latest_activity_time_utc: null,
+        top_actors: [],
+        action_counts: [],
         recent_deletes: [],
       },
       logon_summary: {
-        total_count: 264,
-        latest_activity_time_utc: "Preview mode",
-        top_users: [
-          { actor: "administrator", count: 88 },
-          { actor: "svc-adfs", count: 47 },
-          { actor: "degesa", count: 28 },
-        ],
-        top_failure_users: [
-          { actor: "administrator", count: 41 },
-          { actor: "svc-backup", count: 19 },
-          { actor: "guest", count: 8 },
-        ],
-        event_mix: [
-          { event_type: "Logon", count: 121 },
-          { event_type: "LogonFailure", count: 96 },
-          { event_type: "Logoff", count: 35 },
-          { event_type: "AccountLockout", count: 12 },
-        ],
+        total_count: 0,
+        latest_activity_time_utc: null,
+        top_users: [],
+        top_failure_users: [],
+        event_mix: [],
         event_counts: {
-          Logon: 121,
-          LogonFailure: 96,
-          Logoff: 35,
-          AccountLockout: 12,
+          Logon: 0,
+          LogonFailure: 0,
+          Logoff: 0,
+          AccountLockout: 0,
         },
-        top_failure_sources: [
-          { source: "WS-AD-01", count: 54 },
-          { source: "192.168.10.24", count: 21 },
-          { source: "Unknown", count: 9 },
-        ],
+        top_failure_sources: [],
       },
-      recent_activity: [
-        {
-          time_utc: "Preview",
-          actor: "degesa",
-          action: "Modify",
-          target_type: "User",
-          target_name: "Guest",
-          domain_controller: "WATUUGDC",
-          source_workstation: "ADMIN-WS",
-          source_ip_address: "192.168.10.25",
-        },
-      ],
+      error: message,
+      recent_activity: [],
       scheduler: {
         enabled: false,
         running: false,

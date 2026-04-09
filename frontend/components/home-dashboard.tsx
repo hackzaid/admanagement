@@ -333,7 +333,10 @@ export function HomeDashboard({
   }));
 
   const alerts = [
-    ...((logon.top_failure_sources ?? []).slice(0, 2).map((item) => ({
+    ...((logon.top_failure_sources ?? [])
+      .filter((item) => item.count > 0)
+      .slice(0, 2)
+      .map((item) => ({
       category: "Authentication",
       title: `${item.count} failed logons or lockouts from ${item.source}`,
       detail: "Review password spray, stale credentials, or host health",
@@ -345,18 +348,18 @@ export function HomeDashboard({
       detail: `${item.target_type} object removed on ${item.domain_controller}`,
       time: formatAlertTimestamp(item.time_utc, "Recent directory event"),
     })),
-    {
+    ...(snapshot.findings?.password_never_expires?.count ? [{
       category: "Password policy",
       title: `${formatCount(snapshot.findings?.password_never_expires?.count)} accounts have non-expiring passwords`,
       detail: "Human account review recommended",
       time: formatAlertTimestamp(snapshot.captured_at_utc, "Snapshot finding"),
-    },
-    {
+    }] : []),
+    ...(snapshot.findings?.stale_computers?.count ? [{
       category: "Directory hygiene",
       title: `${formatCount(snapshot.findings?.stale_computers?.count)} stale computers remain enabled`,
       detail: "Likely audit flag if not quarantined",
       time: formatAlertTimestamp(snapshot.captured_at_utc, "Snapshot finding"),
-    },
+    }] : []),
   ].slice(0, 6);
 
   const summaryRows = [
@@ -403,7 +406,7 @@ export function HomeDashboard({
     <AppShell
       title="Active Directory home"
       subtitle="Graphical operational view for privileged change activity, compliance pressure points, and recent alerts."
-      eyebrow={dashboard.isFallback ? "Preview Mode" : "Home"}
+      eyebrow={dashboard.error ? "Data unavailable" : dashboard.isFallback ? "Preview Mode" : "Home"}
       heroMode="none"
     >
       <section className="home-toolbar panel motion-stage-block">
@@ -437,7 +440,7 @@ export function HomeDashboard({
         {loading ? <span className="home-preview-flag">Refreshing</span> : null}
         {runNowMessage ? <span className="home-preview-flag">{runNowMessage}</span> : null}
         {runNowError ? <span className="home-preview-flag home-preview-flag-danger">{runNowError}</span> : null}
-        {dashboard.isFallback ? <span className="home-preview-flag">Preview dataset</span> : null}
+        {dashboard.error ? <span className="home-preview-flag home-preview-flag-danger">{dashboard.error}</span> : null}
       </section>
 
       <section className="dashboard-focus-grid motion-stage-block">
@@ -732,17 +735,28 @@ export function HomeDashboard({
           <section className="home-rail-panel">
             <div className="home-rail-head">
               <h3>Recent alerts</h3>
-              <span>{dashboard.isFallback ? "Preview dataset" : `${alerts.length} findings`}</span>
+              <span>{alerts.length ? `${alerts.length} findings` : "No active findings"}</span>
             </div>
             <div className="alert-list">
-              {alerts.map((alert) => (
-                <article className="alert-item" key={`${alert.title}-${alert.time}`}>
-                  <div className="alert-category">{alert.category}</div>
-                  <div className="alert-title">{alert.title}</div>
-                  <div className="alert-detail">{alert.detail}</div>
-                  <div className="alert-time">{alert.time}</div>
+              {alerts.length ? (
+                alerts.map((alert) => (
+                  <article className="alert-item" key={`${alert.title}-${alert.time}`}>
+                    <div className="alert-category">{alert.category}</div>
+                    <div className="alert-title">{alert.title}</div>
+                    <div className="alert-detail">{alert.detail}</div>
+                    <div className="alert-time">{alert.time}</div>
+                  </article>
+                ))
+              ) : (
+                <article className="alert-item alert-item-empty">
+                  <div className="alert-title">No current alert findings</div>
+                  <div className="alert-detail">
+                    {dashboard.error
+                      ? "The dashboard could not load live data. Review the message above and refresh once the backend is reachable."
+                      : "No failed-logon hotspots, delete events, or hygiene findings are currently in scope for this view."}
+                  </div>
                 </article>
-              ))}
+              )}
             </div>
           </section>
 
