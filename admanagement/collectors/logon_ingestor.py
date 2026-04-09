@@ -7,7 +7,7 @@ from typing import Any
 from admanagement.core.config import Settings
 from admanagement.services.activity_analysis import normalize_iso_datetime
 from admanagement.services.logon_analysis import LogonAnalysisService
-from admanagement.services.runtime_config import RuntimeConfigService
+from admanagement.services.runtime_config import RuntimeConfigService, resolve_winrm_cert_validation
 
 
 LOGON_EVENT_MAP = {
@@ -124,18 +124,32 @@ class LogonIngestor:
         from pypsrp.client import Client
 
         effective = self.runtime.effective_runtime()
+        ssl_enabled = bool(effective["winrm_use_ssl"])
+        port = int(effective["winrm_port"])
+        auth = str(effective["winrm_auth"])
         client = Client(
             server=domain_controller,
             username=self._resolve_winrm_username(),
             password=effective["winrm_password"],
-            ssl=effective["winrm_use_ssl"],
-            port=effective["winrm_port"],
-            auth=effective["winrm_auth"],
-            cert_validation=effective["winrm_server_cert_validation"],
+            ssl=ssl_enabled,
+            port=port,
+            auth=auth,
+            cert_validation=resolve_winrm_cert_validation(effective["winrm_server_cert_validation"]),
             operation_timeout=self.settings.winrm_operation_timeout,
             read_timeout=self.settings.winrm_read_timeout,
         )
-        stdout, streams, had_errors = client.execute_ps(self._build_remote_script(start_time, end_time, self.settings.event_max_records_per_poll))
+        try:
+            stdout, streams, had_errors = client.execute_ps(
+                self._build_remote_script(start_time, end_time, self.settings.event_max_records_per_poll)
+            )
+        except Exception as exc:
+            raise self._normalize_transport_error(
+                exc,
+                domain_controller=domain_controller,
+                ssl_enabled=ssl_enabled,
+                port=port,
+                auth=auth,
+            ) from exc
         if had_errors:
             detail = self._format_psrp_streams(streams) or stdout.strip() or "PowerShell returned errors with no message."
             raise RuntimeError(f"WinRM collection failed for {domain_controller}: {detail}")
@@ -344,3 +358,24 @@ catch {{
                 if message:
                     messages.append(f"{stream_name}: {message}")
         return " | ".join(messages)
+
+    def _normalize_transport_error(
+        self,
+        exc: Exception,
+        *,
+        domain_controller: str,
+        ssl_enabled: bool,
+        port: int,
+        auth: str,
+    ) -> RuntimeError:
+        message = str(exc)
+        if "WRONG_VERSION_NUMBER" in message and ssl_enabled and port == 5985:
+            detail = (
+                f"WinRM collection failed for {domain_controller}: The saved runtime is using HTTPS on port 5985, "
+                "but that endpoint is responding like HTTP. In configuration, either set WinRM Use SSL to false "
+                "for port 5985 or switch to HTTPS on port 5986."
+            )
+            if auth.lower() == "credssp":
+                detail += " CredSSP also typically expects the HTTPS/5986 path."
+            return RuntimeError(detail)
+        return RuntimeError(f"WinRM collection failed for {domain_controller}: {message}")

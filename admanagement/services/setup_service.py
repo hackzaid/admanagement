@@ -6,7 +6,7 @@ from ldap3 import ALL, Connection, Server
 
 from admanagement.core.config import Settings
 from admanagement.services.configuration_service import ConfigurationService
-from admanagement.services.runtime_config import RuntimeConfigService
+from admanagement.services.runtime_config import RuntimeConfigService, resolve_winrm_cert_validation
 
 
 class SetupService:
@@ -127,7 +127,7 @@ class SetupService:
             ssl=winrm_use_ssl,
             port=winrm_port,
             auth=winrm_auth,
-            cert_validation=self.settings.winrm_server_cert_validation,
+            cert_validation=resolve_winrm_cert_validation(self.settings.winrm_server_cert_validation),
             operation_timeout=self.settings.winrm_operation_timeout,
             read_timeout=self.settings.winrm_read_timeout,
         )

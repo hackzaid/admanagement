@@ -30,6 +30,7 @@ dependencies = [
   "orjson==3.11.3",
   "typer==0.17.4",
   "pypsrp==0.8.1",
+  "requests-credssp==2.0.0",
 ]
 
 [project.scripts]

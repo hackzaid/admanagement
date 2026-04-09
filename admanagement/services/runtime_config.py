@@ -13,6 +13,24 @@ from admanagement.models.configuration import BusinessHoursConfig, DomainControl
 from admanagement.models.runtime_config import RuntimeSetting, SetupState
 
 
+def resolve_winrm_cert_validation(value: str | bool | None) -> bool | str:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return True
+
+    text = str(value).strip()
+    if not text:
+        return True
+
+    lowered = text.lower()
+    if lowered in {"ignore", "false", "0", "no", "off"}:
+        return False
+    if lowered in {"validate", "true", "1", "yes", "on"}:
+        return True
+    return text
+
+
 class RuntimeConfigService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings

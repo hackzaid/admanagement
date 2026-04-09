@@ -77,6 +77,16 @@ def parse_optional_int(value: str | None) -> int | None:
         return None
 
 
+def parse_payload(payload_json: str | None) -> dict[str, Any]:
+    if not payload_json:
+        return {}
+    try:
+        payload = json.loads(payload_json)
+    except json.JSONDecodeError:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
 class ActivityAnalysisService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
