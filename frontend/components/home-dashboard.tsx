@@ -30,6 +30,17 @@ function formatCount(value: number | undefined) {
   return new Intl.NumberFormat("en-US").format(value ?? 0);
 }
 
+function formatAlertTimestamp(value: string | null | undefined, fallbackLabel: string) {
+  if (!value) {
+    return fallbackLabel;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return fallbackLabel;
+  }
+  return formatDisplayDateTime(value, fallbackLabel);
+}
+
 function deriveHourlySeries(times: string[]) {
   const hours = Array.from({ length: 24 }, () => 0);
   for (const time of times) {
@@ -323,24 +334,28 @@ export function HomeDashboard({
 
   const alerts = [
     ...((logon.top_failure_sources ?? []).slice(0, 2).map((item) => ({
+      category: "Authentication",
       title: `${item.count} failed logons or lockouts from ${item.source}`,
       detail: "Review password spray, stale credentials, or host health",
-      time: formatDisplayDateTime(logon.latest_activity_time_utc, "Latest auth activity"),
+      time: formatAlertTimestamp(logon.latest_activity_time_utc, "Latest auth signal"),
     })) ?? []),
     ...(activity.recent_deletes ?? []).slice(0, 4).map((item) => ({
+      category: "Directory change",
       title: `${formatPrincipalDisplay(item.actor)} deleted ${item.target_name}`,
       detail: `${item.target_type} object removed on ${item.domain_controller}`,
-      time: formatDisplayDateTime(item.time_utc),
+      time: formatAlertTimestamp(item.time_utc, "Recent directory event"),
     })),
     {
+      category: "Password policy",
       title: `${formatCount(snapshot.findings?.password_never_expires?.count)} accounts have non-expiring passwords`,
       detail: "Human account review recommended",
-      time: formatDisplayDateTime(snapshot.captured_at_utc, "Latest snapshot"),
+      time: formatAlertTimestamp(snapshot.captured_at_utc, "Snapshot finding"),
     },
     {
+      category: "Directory hygiene",
       title: `${formatCount(snapshot.findings?.stale_computers?.count)} stale computers remain enabled`,
       detail: "Likely audit flag if not quarantined",
-      time: formatDisplayDateTime(snapshot.captured_at_utc, "Latest snapshot"),
+      time: formatAlertTimestamp(snapshot.captured_at_utc, "Snapshot finding"),
     },
   ].slice(0, 6);
 
@@ -699,11 +714,17 @@ export function HomeDashboard({
         <aside className="home-rail">
           <section className="home-scoreboard">
             <div className="home-score-card home-score-card-danger">
-              <span>Critical</span>
+              <div className="home-score-copy">
+                <span>Critical</span>
+                <small>Account lockouts requiring immediate operator review</small>
+              </div>
               <strong>{formatCount(logon.event_counts?.AccountLockout ?? 0)}</strong>
             </div>
             <div className="home-score-card home-score-card-warn">
-              <span>Attention</span>
+              <div className="home-score-copy">
+                <span>Attention</span>
+                <small>Failed sign-ins and hygiene exceptions in the selected range</small>
+              </div>
               <strong>{formatCount(logon.event_counts?.LogonFailure ?? snapshot.findings?.password_never_expires?.count)}</strong>
             </div>
           </section>
@@ -711,11 +732,12 @@ export function HomeDashboard({
           <section className="home-rail-panel">
             <div className="home-rail-head">
               <h3>Recent alerts</h3>
-              <span>View all</span>
+              <span>{dashboard.isFallback ? "Preview dataset" : `${alerts.length} findings`}</span>
             </div>
             <div className="alert-list">
               {alerts.map((alert) => (
                 <article className="alert-item" key={`${alert.title}-${alert.time}`}>
+                  <div className="alert-category">{alert.category}</div>
                   <div className="alert-title">{alert.title}</div>
                   <div className="alert-detail">{alert.detail}</div>
                   <div className="alert-time">{alert.time}</div>
