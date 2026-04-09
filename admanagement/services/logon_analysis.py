@@ -180,40 +180,32 @@ class LogonAnalysisService:
                 .limit(limit)
             ).all()
 
+            failure_ip_key = func.coalesce(
+                base_statement.c.source_ip_address,
+                cast(literal("Unknown"), String),
+            )
             failure_ip_sources = session.execute(
                 select(
-                    func.coalesce(
-                        base_statement.c.source_ip_address,
-                        cast(literal("Unknown"), String),
-                    ),
+                    failure_ip_key,
                     func.count(),
                 )
                 .where(base_statement.c.event_type == "LogonFailure")
-                .group_by(
-                    func.coalesce(
-                        base_statement.c.source_ip_address,
-                        cast(literal("Unknown"), String),
-                    )
-                )
+                .group_by(failure_ip_key)
                 .order_by(func.count().desc())
                 .limit(limit)
             ).all()
 
+            lockout_workstation_key = func.coalesce(
+                base_statement.c.source_workstation,
+                cast(literal("Unknown"), String),
+            )
             lockout_workstations = session.execute(
                 select(
-                    func.coalesce(
-                        base_statement.c.source_workstation,
-                        cast(literal("Unknown"), String),
-                    ),
+                    lockout_workstation_key,
                     func.count(),
                 )
                 .where(base_statement.c.event_type == "AccountLockout")
-                .group_by(
-                    func.coalesce(
-                        base_statement.c.source_workstation,
-                        cast(literal("Unknown"), String),
-                    )
-                )
+                .group_by(lockout_workstation_key)
                 .order_by(func.count().desc())
                 .limit(limit)
             ).all()
