@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from admanagement.db.base import Base
@@ -21,7 +21,11 @@ class LogonActivity(Base):
     source_port: Mapped[str | None] = mapped_column(String(32), nullable=True)
     logon_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
     authentication_package: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    failure_status: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    failure_sub_status: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     logon_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     event_id: Mapped[int] = mapped_column(Integer, index=True)
     event_record_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     activity_time_utc: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    raw_payload: Mapped[str | None] = mapped_column(Text, nullable=True)

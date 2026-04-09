@@ -188,6 +188,11 @@ export type ActivityRow = {
   action: string;
   target_type: string;
   target_name: string;
+  object_class?: string | null;
+  attribute_name?: string | null;
+  attribute_operation?: string | null;
+  attribute_value?: string | null;
+  change_summary?: string | null;
   domain_controller: string;
   source_workstation?: string | null;
   source_ip_address?: string | null;
@@ -322,6 +327,7 @@ export type LogonSummary = {
   event_mix: Array<{ event_type: string; count: number }>;
   event_counts?: Record<string, number>;
   top_failure_sources?: Array<{ source: string; count: number }>;
+  top_failure_reasons?: Array<{ reason: string; count: number }>;
   failure_ip_sources?: Array<{ source: string; count: number }>;
   lockout_workstations?: Array<{ source: string; count: number }>;
   rdp_summary?: {
@@ -344,6 +350,9 @@ export type LogonRow = {
   source_port?: string | null;
   logon_type?: string | null;
   authentication_package?: string | null;
+  failure_status?: string | null;
+  failure_sub_status?: string | null;
+  failure_reason?: string | null;
   event_id?: number;
   event_record_id?: number | null;
 };

@@ -217,6 +217,9 @@ foreach ($event in $events) {{
     $sourcePort = ''
     $logonType = ''
     $authenticationPackage = ''
+    $failureStatus = ''
+    $failureSubStatus = ''
+    $failureReason = ''
     $logonId = ''
     $eventType = ''
 
@@ -251,6 +254,9 @@ foreach ($event in $events) {{
             $sourcePort = Get-FirstField -Map $data -Names @('IpPort')
             $logonType = Get-FirstField -Map $data -Names @('LogonType')
             $authenticationPackage = Get-FirstField -Map $data -Names @('AuthenticationPackageName', 'AuthenticationPackage')
+            $failureStatus = Get-FirstField -Map $data -Names @('Status')
+            $failureSubStatus = Get-FirstField -Map $data -Names @('SubStatus')
+            $failureReason = Get-FirstField -Map $data -Names @('FailureReason', 'StatusDescription')
             $logonId = Get-FirstField -Map $data -Names @('SubjectLogonId')
             $eventType = 'LogonFailure'
         }}
@@ -280,6 +286,9 @@ foreach ($event in $events) {{
         source_port = $sourcePort
         logon_type = $logonType
         authentication_package = $authenticationPackage
+        failure_status = $failureStatus
+        failure_sub_status = $failureSubStatus
+        failure_reason = $failureReason
         logon_id = $logonId
         event_id = [int]$event.Id
         event_record_id = [string]$event.RecordId

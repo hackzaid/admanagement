@@ -49,6 +49,14 @@ export function ReportWorkspace({
   const pagination = usePagination(filteredRows, 10);
   const actorBars = countBy(filteredRows, (row) => formatPrincipalDisplay(row.actor)).slice(0, 8);
   const dcBars = countBy(filteredRows, (row) => row.domain_controller).slice(0, 8);
+  const modifiedAttributeBars = countBy(
+    filteredRows.filter((row) => row.action === "Modify" && row.attribute_name),
+    (row) => row.attribute_name || "Unknown attribute",
+  ).slice(0, 8);
+  const attributeOperationBars = countBy(
+    filteredRows.filter((row) => row.action === "Modify" && row.attribute_operation),
+    (row) => row.attribute_operation || "Unknown operation",
+  ).slice(0, 6);
   const snapshot = snapshotSummary;
   const exportUrl = buildActivityExportUrl({
     reportKey: report.key,
@@ -181,6 +189,17 @@ export function ReportWorkspace({
         </SectionPanel>
       </section>
 
+      {modifiedAttributeBars.length ? (
+        <section className="two-column motion-stage-block">
+          <SectionPanel title="What was modified" kicker="Most frequently changed attributes">
+            <HorizontalBars data={modifiedAttributeBars} />
+          </SectionPanel>
+          <SectionPanel title="Modification operations" kicker="Attribute-level change operations">
+            <HorizontalBars tone="amber" data={attributeOperationBars} />
+          </SectionPanel>
+        </section>
+      ) : null}
+
       <SectionPanel title="Detailed rows" kicker="Recent activity slice">
         {filteredRows.length ? (
           <TablePanel
@@ -193,6 +212,7 @@ export function ReportWorkspace({
                     <th>Action</th>
                     <th>Type</th>
                     <th>Target</th>
+                    <th>Change Detail</th>
                     <th>Source Workstation</th>
                     <th>Source IP</th>
                     <th>Recorded On</th>
@@ -206,6 +226,7 @@ export function ReportWorkspace({
                       <td>{row.action}</td>
                       <td>{row.target_type}</td>
                       <td>{row.target_name}</td>
+                      <td>{row.change_summary || "-"}</td>
                       <td>{row.source_workstation || "-"}</td>
                       <td>{row.source_ip_address || "-"}</td>
                       <td>{row.domain_controller}</td>

@@ -365,6 +365,10 @@ class ActivityAnalysisService:
             "action",
             "target_type",
             "target_name",
+            "change_summary",
+            "attribute_name",
+            "attribute_operation",
+            "attribute_value",
             "domain_controller",
             "source_workstation",
             "source_ip_address",
@@ -504,6 +508,23 @@ class ActivityAnalysisService:
         return statement.where(and_(*conditions)) if conditions else statement
 
     def _serialize_activity(self, row: AdminActivity) -> dict[str, Any]:
+        payload = parse_payload(row.raw_payload)
+        attribute_name = payload.get("attribute_name") or payload.get("AttributeLDAPDisplayName")
+        attribute_operation = payload.get("attribute_operation") or payload.get("OperationType")
+        attribute_value = payload.get("attribute_value") or payload.get("AttributeValue")
+        object_class = payload.get("object_class") or payload.get("ObjectClass")
+
+        change_summary = None
+        if row.action == "Modify" and attribute_name:
+            change_summary = str(attribute_name)
+            if attribute_operation:
+                change_summary = f"{change_summary} ({attribute_operation})"
+            if attribute_value not in (None, ""):
+                compact_value = str(attribute_value)
+                if len(compact_value) > 80:
+                    compact_value = f"{compact_value[:77]}..."
+                change_summary = f"{change_summary}: {compact_value}"
+
         return {
             "id": row.id,
             "time_utc": row.activity_time_utc.isoformat(),
@@ -517,6 +538,11 @@ class ActivityAnalysisService:
             "event_id": row.event_id,
             "event_record_id": row.event_record_id,
             "distinguished_name": row.distinguished_name,
+            "object_class": object_class,
+            "attribute_name": attribute_name,
+            "attribute_operation": attribute_operation,
+            "attribute_value": attribute_value,
+            "change_summary": change_summary,
         }
 
     def _report_key_filters(self, report_key: str | None) -> tuple[str | None, str | None]:

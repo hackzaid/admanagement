@@ -84,6 +84,10 @@ export function LogonReportWorkspace({
     rows.filter((row) => row.event_type === "AccountLockout"),
     (row) => row.source_workstation || "Unknown",
   ).slice(0, 8);
+  const failureReasonBars = countBy(
+    rows.filter((row) => row.event_type === "LogonFailure"),
+    (row) => row.failure_reason || row.failure_status || "Unknown",
+  ).slice(0, 8);
   const exportUrl = buildLogonExportUrl({
     actor: filters.actor,
     domainController: filters.domainController,
@@ -209,6 +213,16 @@ export function LogonReportWorkspace({
           </section>
 
           <section className="two-column motion-stage-block">
+            <SectionPanel title="Failure reasons" kicker="Why sign-ins are being rejected">
+              <HorizontalBars
+                tone="amber"
+                data={
+                  failureReasonBars.length
+                    ? failureReasonBars
+                    : logonSummary.top_failure_reasons?.map((item) => ({ label: item.reason, value: item.count })) ?? []
+                }
+              />
+            </SectionPanel>
             <SectionPanel title="Failed logons by source IP" kicker="Password spray and credential misuse vantage">
               <HorizontalBars
                 tone="amber"
@@ -218,6 +232,25 @@ export function LogonReportWorkspace({
                     : logonSummary.failure_ip_sources?.map((item) => ({ label: item.source, value: item.count })) ?? []
                 }
               />
+            </SectionPanel>
+          </section>
+
+          <section className="two-column motion-stage-block">
+            <SectionPanel title="Critical auth context" kicker="What the current failure pattern is pointing to">
+              <div className="mini-list">
+                <div className="mini-list-item">
+                  <span>Most common failure reason</span>
+                  <strong>{failureReasonBars[0]?.label || logonSummary.top_failure_reasons?.[0]?.reason || "No failure detail"}</strong>
+                </div>
+                <div className="mini-list-item">
+                  <span>Top source IP</span>
+                  <strong>{failureIpBars[0]?.label || logonSummary.failure_ip_sources?.[0]?.source || "No source IP"}</strong>
+                </div>
+                <div className="mini-list-item">
+                  <span>Top lockout caller</span>
+                  <strong>{lockoutWorkstationBars[0]?.label || logonSummary.lockout_workstations?.[0]?.source || "No caller"}</strong>
+                </div>
+              </div>
             </SectionPanel>
             <SectionPanel title="Lockouts by source workstation" kicker="Caller machine concentration">
               <HorizontalBars
@@ -424,13 +457,15 @@ export function LogonReportWorkspace({
           table={
             <table className="data-table">
               <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>User</th>
-                  <th>Event</th>
-                  <th>Source Workstation</th>
-                  <th>Source IP</th>
-                  <th>Logon Type</th>
+                  <tr>
+                    <th>Time</th>
+                    <th>User</th>
+                    <th>Event</th>
+                    <th>Failure reason</th>
+                    <th>Status</th>
+                    <th>Source Workstation</th>
+                    <th>Source IP</th>
+                    <th>Logon Type</th>
                   <th>Auth</th>
                   <th>Recorded On</th>
                 </tr>
@@ -441,6 +476,8 @@ export function LogonReportWorkspace({
                     <td>{formatDisplayDateTime(row.time_utc)}</td>
                     <td>{formatPrincipalDisplay(row.actor)}</td>
                     <td>{row.event_type}</td>
+                    <td>{row.failure_reason || "-"}</td>
+                    <td>{row.failure_status || row.failure_sub_status || "-"}</td>
                     <td>{row.source_workstation || "-"}</td>
                     <td>{row.source_ip_address || "-"}</td>
                     <td>{row.logon_type || "-"}</td>

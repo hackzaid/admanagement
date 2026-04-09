@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 from datetime import datetime, timezone
 from io import StringIO
 from typing import Any
@@ -67,10 +68,14 @@ class LogonAnalysisService:
                         source_port=(row.get("source_port") or "").strip() or None,
                         logon_type=(row.get("logon_type") or "").strip() or None,
                         authentication_package=(row.get("authentication_package") or "").strip() or None,
+                        failure_status=(row.get("failure_status") or "").strip() or None,
+                        failure_sub_status=(row.get("failure_sub_status") or "").strip() or None,
+                        failure_reason=(row.get("failure_reason") or "").strip() or None,
                         logon_id=(row.get("logon_id") or "").strip() or None,
                         event_id=parse_optional_int(str(row.get("event_id", "") or "")) or 0,
                         event_record_id=event_record_id,
                         activity_time_utc=parse_logon_time(str(row.get("activity_time_utc", "") or "")),
+                        raw_payload=json.dumps(row, ensure_ascii=True, sort_keys=True),
                     )
                 )
                 imported_rows += 1
@@ -142,6 +147,22 @@ class LogonAnalysisService:
                 )
                 .where(base_statement.c.event_type.in_(("LogonFailure", "AccountLockout")))
                 .group_by(source_key)
+                .order_by(func.count().desc())
+                .limit(limit)
+            ).all()
+
+            failure_reason_key = func.coalesce(
+                base_statement.c.failure_reason,
+                base_statement.c.failure_status,
+                cast(literal("Unknown"), String),
+            )
+            top_failure_reasons = session.execute(
+                select(
+                    failure_reason_key,
+                    func.count(),
+                )
+                .where(base_statement.c.event_type == "LogonFailure")
+                .group_by(failure_reason_key)
                 .order_by(func.count().desc())
                 .limit(limit)
             ).all()
@@ -218,6 +239,7 @@ class LogonAnalysisService:
             "event_mix": [{"event_type": event_type, "count": count} for event_type, count in event_mix],
             "event_counts": {event_type: count for event_type, count in event_mix},
             "top_failure_sources": [{"source": source, "count": count} for source, count in top_failure_sources],
+            "top_failure_reasons": [{"reason": reason, "count": count} for reason, count in top_failure_reasons],
             "rdp_summary": {
                 "success_count": rdp_success_count,
                 "failure_count": rdp_failure_count,
@@ -334,6 +356,9 @@ class LogonAnalysisService:
             "source_port",
             "logon_type",
             "authentication_package",
+            "failure_status",
+            "failure_sub_status",
+            "failure_reason",
             "event_id",
             "event_record_id",
         ]
@@ -443,6 +468,9 @@ class LogonAnalysisService:
             "source_port": row.source_port,
             "logon_type": row.logon_type,
             "authentication_package": row.authentication_package,
+            "failure_status": row.failure_status,
+            "failure_sub_status": row.failure_sub_status,
+            "failure_reason": row.failure_reason,
             "logon_id": row.logon_id,
             "event_id": row.event_id,
             "event_record_id": row.event_record_id,
