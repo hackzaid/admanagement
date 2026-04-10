@@ -171,7 +171,6 @@ export type DashboardOverview = {
     source_ip_address?: string | null;
   }>;
   scheduler?: SchedulerStatus;
-  isFallback?: boolean;
 };
 
 export type SnapshotRun = {
@@ -317,6 +316,7 @@ export type ConfigurationOverview = {
   excluded_accounts: ExcludedAccountConfig[];
   alert_rules: AlertRuleConfig[];
   audit_policy_expectations: AuditPolicyExpectation[];
+  error?: string | null;
 };
 
 export type LogonSummary = {
@@ -609,7 +609,6 @@ export async function getDashboardOverviewFiltered(params?: {
         start_time_utc: params?.startTimeUtc ?? null,
         end_time_utc: params?.endTimeUtc ?? null,
       },
-      isFallback: true,
     };
   }
 }
@@ -804,41 +803,36 @@ export async function deleteSavedDashboardView(itemId: number): Promise<{ ok: bo
 export async function getConfigurationOverview(): Promise<ConfigurationOverview> {
   try {
     return await fetchJson<ConfigurationOverview>("/api/configuration/overview");
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Configuration data is unavailable.";
     return {
-      must_have_modules: [
-        { key: "domain_settings", title: "Domain Settings", why: "Keep the monitored directory and bind scope explicit." },
-        { key: "domain_controllers", title: "Domain Controllers", why: "Collector health and target coverage matter daily." },
-        { key: "audit_policy", title: "Audit Policy Baseline", why: "Missing audit settings break the evidence plane." },
-        { key: "alerts_reports", title: "Alerts and Reports", why: "Alert tuning is what prevents noise from winning." },
-        { key: "business_hours", title: "Business Hours", why: "After-hours changes should stand out immediately." },
-        { key: "excluded_accounts", title: "Excluded Accounts", why: "Service-account noise needs controlled suppression." },
-      ],
-      defer_modules: ["Disk space analysis", "Archive restore", "SIEM integration", "Ticketing integration", "Personalize"],
+      must_have_modules: [],
+      defer_modules: [],
       domain: {
-        id: 1,
-        name: "Default Domain",
-        domain_fqdn: "example.local",
-        ldap_server: "ldaps://dc01.example.local",
-        ldap_base_dn: "DC=example,DC=local",
-        is_enabled: true,
-        is_default: true,
-        notes: "Preview configuration",
-        updated_at_utc: "Preview",
+        id: 0,
+        name: "Unavailable",
+        domain_fqdn: "",
+        ldap_server: null,
+        ldap_base_dn: null,
+        is_enabled: false,
+        is_default: false,
+        notes: null,
+        updated_at_utc: "",
       },
       business_hours: {
-        id: 1,
+        id: 0,
         timezone_name: "Africa/Kampala",
         start_hour: 8,
         end_hour: 18,
         working_days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-        updated_at_utc: "Preview",
+        updated_at_utc: "",
       },
       domain_controllers: [],
       logon_source_hosts: [],
       excluded_accounts: [],
       alert_rules: [],
       audit_policy_expectations: [],
+      error: message,
     };
   }
 }

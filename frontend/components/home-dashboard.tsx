@@ -406,7 +406,7 @@ export function HomeDashboard({
     <AppShell
       title="Active Directory home"
       subtitle="Graphical operational view for privileged change activity, compliance pressure points, and recent alerts."
-      eyebrow={dashboard.error ? "Data unavailable" : dashboard.isFallback ? "Preview Mode" : "Home"}
+      eyebrow={dashboard.error ? "Data unavailable" : "Home"}
       heroMode="none"
     >
       <section className="home-toolbar panel motion-stage-block">

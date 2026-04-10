@@ -19,6 +19,7 @@ export function ConfigurationShell({
   return (
     <AppShell title={title} subtitle={subtitle} eyebrow="Configuration" heroMode="none">
       <ConfigurationNav overview={overview} />
+      {overview.error ? <div className="banner banner-danger">{overview.error}</div> : null}
       {children}
     </AppShell>
   );
