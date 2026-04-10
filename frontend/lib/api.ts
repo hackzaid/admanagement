@@ -367,14 +367,10 @@ export type LogonQueryResult = {
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 
 function shouldThrowApiFallback(error: unknown) {
-  return (
-    typeof window === "undefined" &&
-    (process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_STRICT_API_ERRORS === "true")
-  )
-    ? (() => {
-        throw (error instanceof Error ? error : new Error("API request failed."));
-      })()
-    : false;
+  if (typeof window === "undefined") {
+    throw (error instanceof Error ? error : new Error("API request failed."));
+  }
+  return false;
 }
 
 function getApiBaseUrl() {
@@ -444,7 +440,7 @@ async function fetchJson<T>(path: string, options?: { timeoutMs?: number }): Pro
   try {
     response = await fetch(buildApiUrl(path), {
       headers,
-      next: { revalidate: 30 },
+      cache: "no-store",
       signal: AbortSignal.timeout(options?.timeoutMs ?? 5000),
     });
   } catch (error) {
