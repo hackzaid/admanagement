@@ -366,6 +366,17 @@ export type LogonQueryResult = {
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 
+function shouldThrowApiFallback(error: unknown) {
+  return (
+    typeof window === "undefined" &&
+    (process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_STRICT_API_ERRORS === "true")
+  )
+    ? (() => {
+        throw (error instanceof Error ? error : new Error("API request failed."));
+      })()
+    : false;
+}
+
 function getApiBaseUrl() {
   if (typeof window === "undefined") {
     return (process.env.INTERNAL_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL).replace(/\/$/, "");
@@ -502,10 +513,11 @@ export async function triggerDashboardRunNow(includeSnapshot = false): Promise<D
 export async function getUpdateStatus(refresh = false): Promise<UpdateStatus> {
   try {
     return await fetchJson<UpdateStatus>(`/api/system/update-status${refresh ? "?refresh=true" : ""}`);
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return {
       status: "unknown",
-      current_version: "0.1.0",
+      current_version: "",
       current_ref: null,
       update_available: false,
       error: "Update status is unavailable.",
@@ -517,13 +529,14 @@ export async function getUpdateStatus(refresh = false): Promise<UpdateStatus> {
 export async function getSystemOverview(refresh = false): Promise<SystemOverview> {
   try {
     return await fetchJson<SystemOverview>(`/api/system/overview${refresh ? "?refresh=true" : ""}`);
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return {
       health: {
         status: "unknown",
-        app: "admanagement",
+        app: "",
         environment: "unknown",
-        version: "0.1.0",
+        version: "",
       },
       deployment: {
         repository: null,
@@ -569,6 +582,7 @@ export async function getDashboardOverviewFiltered(params?: {
   try {
     return await fetchJson<DashboardOverview>(`/api/dashboard${suffix}`, { timeoutMs: 20000 });
   } catch (error) {
+    shouldThrowApiFallback(error);
     const message = error instanceof Error ? error.message : "Dashboard data is unavailable.";
     return {
       snapshot_summary: {
@@ -616,7 +630,8 @@ export async function getDashboardOverviewFiltered(params?: {
 export async function getSnapshotRuns(): Promise<SnapshotRun[]> {
   try {
     return await fetchJson<SnapshotRun[]>("/api/snapshots/runs?limit=12");
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return [];
   }
 }
@@ -624,7 +639,8 @@ export async function getSnapshotRuns(): Promise<SnapshotRun[]> {
 export async function getSnapshotSummary(): Promise<SnapshotSummary> {
   try {
     return await fetchJson<SnapshotSummary>("/api/snapshots/summary");
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return {
       run_id: null,
       captured_at_utc: null,
@@ -652,7 +668,8 @@ export async function getSnapshotFindings(params: {
 
   try {
     return await fetchJson<SnapshotFindingQueryResult>(`/api/snapshots/findings?${query.toString()}`);
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return {
       run_id: params.runId ?? null,
       finding: params.finding,
@@ -677,7 +694,8 @@ export async function getSnapshotDrift(params: {
 
   try {
     return await fetchJson<SnapshotDrift>(`/api/snapshots/drift?${query.toString()}`);
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return null;
   }
 }
@@ -685,7 +703,8 @@ export async function getSnapshotDrift(params: {
 export async function getActivitySummary(): Promise<MetricSummary> {
   try {
     return await fetchJson<MetricSummary>("/api/activity/summary?limit=12");
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return {
       total_count: 0,
       latest_activity_time_utc: null,
@@ -699,7 +718,8 @@ export async function getActivitySummary(): Promise<MetricSummary> {
 export async function getRecentActivity(): Promise<DashboardOverview["recent_activity"]> {
   try {
     return await fetchJson<DashboardOverview["recent_activity"]>("/api/activity/recent?limit=20");
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return [];
   }
 }
@@ -726,7 +746,8 @@ export async function getActivityQuery(params: {
 
   try {
     return await fetchJson<ActivityQueryResult>(`/api/activity/query?${query.toString()}`);
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return {
       total_count: 0,
       limit: params.limit ?? 50,
@@ -759,7 +780,8 @@ export function buildActivityExportUrl(params: {
 export async function getReportCatalog(): Promise<ReportCatalogItem[]> {
   try {
     return await fetchJson<ReportCatalogItem[]>("/api/reports/catalog");
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return [];
   }
 }
@@ -767,7 +789,8 @@ export async function getReportCatalog(): Promise<ReportCatalogItem[]> {
 export async function getSavedReports(): Promise<SavedReport[]> {
   try {
     return await fetchJson<SavedReport[]>("/api/reports/saved");
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return [];
   }
 }
@@ -775,7 +798,8 @@ export async function getSavedReports(): Promise<SavedReport[]> {
 export async function getSavedDashboardViews(): Promise<SavedDashboardView[]> {
   try {
     return await fetchJson<SavedDashboardView[]>("/api/reports/saved-views?view_scope=dashboard");
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return [];
   }
 }
@@ -804,6 +828,7 @@ export async function getConfigurationOverview(): Promise<ConfigurationOverview>
   try {
     return await fetchJson<ConfigurationOverview>("/api/configuration/overview");
   } catch (error) {
+    shouldThrowApiFallback(error);
     const message = error instanceof Error ? error.message : "Configuration data is unavailable.";
     return {
       must_have_modules: [],
@@ -919,7 +944,8 @@ export async function upsertAuditPolicyExpectation(payload: {
 export async function getLogonSummary(): Promise<LogonSummary> {
   try {
     return await fetchJson<LogonSummary>("/api/logons/summary?limit=12");
-  } catch {
+  } catch (error) {
+      shouldThrowApiFallback(error);
       return {
         total_count: 0,
         latest_activity_time_utc: null,
@@ -964,7 +990,8 @@ export async function getLogonQuery(params: {
 
   try {
     return await fetchJson<LogonQueryResult>(`/api/logons/query?${query.toString()}`);
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return {
       total_count: 0,
       limit: params.limit ?? 50,
@@ -1009,7 +1036,8 @@ export function buildLogonExportUrl(params: {
 export async function getSetupStatus(): Promise<SetupStatus> {
   try {
     return await fetchJson<SetupStatus>("/api/setup/status");
-  } catch {
+  } catch (error) {
+    shouldThrowApiFallback(error);
     return {
       onboarding_required: true,
       onboarding_completed: false,

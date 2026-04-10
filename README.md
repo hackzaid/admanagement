@@ -140,6 +140,12 @@ On Windows, from the repository root:
 .\Start-Dev.ps1
 ```
 
+Local development notes:
+- `npm run dev` uses Next.js Turbopack for a faster frontend dev loop
+- use `npm run dev:classic` only if you need to fall back to the non-Turbopack dev server
+- `Start-Dev.ps1` now limits Uvicorn reload watching to the `admanagement` package so backend reloads are lighter
+- set `NEXT_PUBLIC_STRICT_API_ERRORS=true` in `.env` if you want local page loads to throw real API errors instead of rendering empty fallback states
+
 ## First-Run Onboarding
 
 The system is designed to onboard a new environment through the web UI before regular monitoring starts.

@@ -31,7 +31,7 @@ if (Test-PortInUse -Port $FrontendPort) {
     Write-Warning "Frontend port $FrontendPort is already in use."
 }
 
-$apiCommand = "Set-Location '$projectRoot'; & '$venvPython' -m uvicorn admanagement.api.main:app --host 0.0.0.0 --port $ApiPort --reload"
+$apiCommand = "Set-Location '$projectRoot'; & '$venvPython' -m uvicorn admanagement.api.main:app --host 0.0.0.0 --port $ApiPort --reload --reload-dir admanagement"
 $frontendCommand = "Set-Location '$frontendRoot'; `$env:PORT='$FrontendPort'; npm run dev -- --port $FrontendPort"
 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $apiCommand | Out-Null
