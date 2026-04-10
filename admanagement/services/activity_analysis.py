@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import StringIO
 from pathlib import Path
+import re
 from typing import Any
 
 from sqlalchemy import Select, and_, func, or_, select
@@ -21,6 +22,38 @@ from admanagement.models.checkpoint import EventCheckpoint
 class ActivityImportResult:
     imported_rows: int
     source_path: str
+
+
+ATTRIBUTE_LABELS = {
+    "accountExpires": "Account Expiration",
+    "badPasswordTime": "Bad Password Time",
+    "displayName": "Display Name",
+    "dNSTombstoned": "DNS Tombstoned",
+    "givenName": "First Name",
+    "lastLogon": "Last Logon",
+    "lastLogonTimestamp": "Last Logon Timestamp",
+    "lockoutTime": "Lockout Time",
+    "mail": "Email Address",
+    "pwdLastSet": "Password Last Set",
+    "sAMAccountName": "Logon Name",
+    "sn": "Last Name",
+    "userAccountControl": "Account Control Flags",
+}
+
+ATTRIBUTE_OPERATION_LABELS = {
+    "%%14674": "Value removed",
+    "%%14675": "Value added",
+    "%%14676": "Value modified",
+}
+
+FILETIME_ATTRIBUTES = {
+    "accountExpires",
+    "badPasswordTime",
+    "lastLogon",
+    "lastLogonTimestamp",
+    "lockoutTime",
+    "pwdLastSet",
+}
 
 
 def parse_activity_time(value: str) -> datetime:
@@ -85,6 +118,89 @@ def parse_payload(payload_json: str | None) -> dict[str, Any]:
     except json.JSONDecodeError:
         return {}
     return payload if isinstance(payload, dict) else {}
+
+
+def format_attribute_name(attribute_name: str | None) -> str | None:
+    if not attribute_name:
+        return None
+    if attribute_name in ATTRIBUTE_LABELS:
+        return ATTRIBUTE_LABELS[attribute_name]
+
+    text = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", attribute_name.replace("_", " "))
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:1].upper() + text[1:] if text else attribute_name
+
+
+def format_attribute_operation(attribute_operation: str | None) -> str | None:
+    if not attribute_operation:
+        return None
+    return ATTRIBUTE_OPERATION_LABELS.get(attribute_operation, attribute_operation)
+
+
+def _try_parse_filetime(raw_value: str) -> datetime | None:
+    try:
+        numeric = int(raw_value)
+    except (TypeError, ValueError):
+        return None
+    if numeric <= 0:
+        return None
+    if numeric >= 9223372036854775807:
+        return None
+
+    unix_seconds = (numeric - 116444736000000000) / 10_000_000
+    try:
+        return datetime.fromtimestamp(unix_seconds, tz=timezone.utc)
+    except (OverflowError, OSError, ValueError):
+        return None
+
+
+def format_attribute_value(attribute_name: str | None, attribute_value: str | None) -> str | None:
+    if attribute_value in (None, ""):
+        return None
+
+    raw_value = str(attribute_value).strip()
+    if not raw_value:
+        return None
+
+    if raw_value.upper() in {"TRUE", "FALSE"}:
+        return raw_value.title()
+
+    if attribute_name in FILETIME_ATTRIBUTES:
+        if attribute_name == "accountExpires" and raw_value in {"0", "9223372036854775807"}:
+            return "Never"
+        if attribute_name == "lockoutTime" and raw_value == "0":
+            return "Not locked"
+        if attribute_name == "pwdLastSet" and raw_value == "0":
+            return "Not set"
+
+        parsed = _try_parse_filetime(raw_value)
+        if parsed:
+            return f"{parsed.strftime('%d %b %Y, %H:%M UTC')} ({raw_value})"
+
+    return raw_value
+
+
+def build_change_summary(
+    *,
+    attribute_name: str | None,
+    attribute_operation: str | None,
+    attribute_value: str | None,
+) -> str | None:
+    if not attribute_name:
+        return None
+
+    if attribute_operation == "Value added":
+        return f"{attribute_name}: set to {attribute_value}" if attribute_value else f"{attribute_name}: value added"
+    if attribute_operation == "Value removed":
+        return f"{attribute_name}: previous value was {attribute_value}" if attribute_value else f"{attribute_name}: previous value removed"
+    if attribute_operation == "Value modified":
+        return f"{attribute_name}: changed to {attribute_value}" if attribute_value else f"{attribute_name}: value modified"
+
+    if attribute_value:
+        return f"{attribute_name} ({attribute_operation}): {attribute_value}" if attribute_operation else f"{attribute_name}: {attribute_value}"
+    if attribute_operation:
+        return f"{attribute_name}: {attribute_operation}"
+    return attribute_name
 
 
 class ActivityAnalysisService:
@@ -519,21 +635,22 @@ class ActivityAnalysisService:
 
     def _serialize_activity(self, row: AdminActivity) -> dict[str, Any]:
         payload = parse_payload(row.raw_payload)
-        attribute_name = payload.get("attribute_name") or payload.get("AttributeLDAPDisplayName")
-        attribute_operation = payload.get("attribute_operation") or payload.get("OperationType")
-        attribute_value = payload.get("attribute_value") or payload.get("AttributeValue")
+        attribute_name_raw = payload.get("attribute_name") or payload.get("AttributeLDAPDisplayName")
+        attribute_operation_raw = payload.get("attribute_operation") or payload.get("OperationType")
+        attribute_value_raw = payload.get("attribute_value") or payload.get("AttributeValue")
         object_class = payload.get("object_class") or payload.get("ObjectClass")
+
+        attribute_name = format_attribute_name(attribute_name_raw)
+        attribute_operation = format_attribute_operation(attribute_operation_raw)
+        attribute_value = format_attribute_value(attribute_name_raw, attribute_value_raw)
 
         change_summary = None
         if row.action == "Modify" and attribute_name:
-            change_summary = str(attribute_name)
-            if attribute_operation:
-                change_summary = f"{change_summary} ({attribute_operation})"
-            if attribute_value not in (None, ""):
-                compact_value = str(attribute_value)
-                if len(compact_value) > 80:
-                    compact_value = f"{compact_value[:77]}..."
-                change_summary = f"{change_summary}: {compact_value}"
+            change_summary = build_change_summary(
+                attribute_name=attribute_name,
+                attribute_operation=attribute_operation,
+                attribute_value=attribute_value,
+            )
 
         return {
             "id": row.id,
