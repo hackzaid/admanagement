@@ -1,6 +1,7 @@
 export type MetricSummary = {
   total_count?: number;
   latest_activity_time_utc?: string | null;
+  collector_health?: CollectorHealth;
   top_actors?: Array<{ actor: string; count: number }>;
   action_counts?: Array<{ target_type: string; action: string; count: number }>;
   recent_deletes?: Array<{
@@ -322,6 +323,7 @@ export type ConfigurationOverview = {
 export type LogonSummary = {
   total_count: number;
   latest_activity_time_utc?: string | null;
+  collector_health?: CollectorHealth;
   top_users: Array<{ actor: string; count: number }>;
   top_failure_users?: Array<{ actor: string; count: number }>;
   event_mix: Array<{ event_type: string; count: number }>;
@@ -362,6 +364,24 @@ export type LogonQueryResult = {
   limit: number;
   offset: number;
   rows: LogonRow[];
+};
+
+export type CollectorHealth = {
+  status: "healthy" | "stale" | "unconfigured";
+  message: string;
+  threshold_minutes: number;
+  expected_sources: string[];
+  healthy_sources: string[];
+  missing_sources: string[];
+  stale_sources: string[];
+  latest_checkpoint_time_utc?: string | null;
+  scope_warning?: string | null;
+  source_statuses: Array<{
+    source: string;
+    last_checkpoint_time_utc?: string | null;
+    age_minutes?: number | null;
+    stale: boolean;
+  }>;
 };
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
@@ -590,6 +610,7 @@ export async function getDashboardOverviewFiltered(params?: {
       activity_summary: {
         total_count: 0,
         latest_activity_time_utc: null,
+        collector_health: undefined,
         top_actors: [],
         action_counts: [],
         recent_deletes: [],
@@ -597,6 +618,7 @@ export async function getDashboardOverviewFiltered(params?: {
       logon_summary: {
         total_count: 0,
         latest_activity_time_utc: null,
+        collector_health: undefined,
         top_users: [],
         top_failure_users: [],
         event_mix: [],
@@ -701,10 +723,11 @@ export async function getActivitySummary(): Promise<MetricSummary> {
     return await fetchJson<MetricSummary>("/api/activity/summary?limit=12");
   } catch (error) {
     shouldThrowApiFallback(error);
-    return {
-      total_count: 0,
-      latest_activity_time_utc: null,
-      top_actors: [],
+      return {
+        total_count: 0,
+        latest_activity_time_utc: null,
+        collector_health: undefined,
+        top_actors: [],
       action_counts: [],
       recent_deletes: [],
     };
@@ -945,6 +968,7 @@ export async function getLogonSummary(): Promise<LogonSummary> {
       return {
         total_count: 0,
         latest_activity_time_utc: null,
+        collector_health: undefined,
         top_users: [],
         top_failure_users: [],
         event_mix: [],

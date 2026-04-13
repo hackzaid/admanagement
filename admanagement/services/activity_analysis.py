@@ -16,6 +16,7 @@ from admanagement.db.bootstrap import init_db
 from admanagement.db.session import SessionLocal
 from admanagement.models.activity import AdminActivity
 from admanagement.models.checkpoint import EventCheckpoint
+from admanagement.services.collector_health import build_activity_collector_health
 
 
 @dataclass(slots=True)
@@ -366,6 +367,7 @@ class ActivityAnalysisService:
                 }
                 for row in recent_deletes
             ],
+            "collector_health": build_activity_collector_health(self.settings),
         }
 
     def recent_activity(

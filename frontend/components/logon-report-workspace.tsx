@@ -58,6 +58,7 @@ export function LogonReportWorkspace({
   const staleComputerPagination = usePagination(staleComputers.rows, 8);
   const nonExpiringPagination = usePagination(nonExpiringUsers.rows, 8);
   const eventCounts = logonSummary.event_counts ?? {};
+  const collectorHealth = logonSummary.collector_health;
   const logonCount = eventCounts.Logon ?? rows.filter((row) => row.event_type === "Logon").length;
   const logoffCount = eventCounts.Logoff ?? rows.filter((row) => row.event_type === "Logoff").length;
   const failureCount = eventCounts.LogonFailure ?? rows.filter((row) => row.event_type === "LogonFailure").length;
@@ -99,6 +100,19 @@ export function LogonReportWorkspace({
 
   return (
     <AppShell title={report.title} subtitle={report.description} eyebrow={report.category}>
+      {collectorHealth && (collectorHealth.status !== "healthy" || collectorHealth.scope_warning) ? (
+        <section
+          className={`banner motion-stage-block${collectorHealth.status === "stale" ? " banner-danger" : ""}`}
+        >
+          <strong>Authentication collector health</strong>
+          <div>{collectorHealth.message}</div>
+          {collectorHealth.latest_checkpoint_time_utc ? (
+            <div>Latest checkpoint: {formatDisplayDateTime(collectorHealth.latest_checkpoint_time_utc, "-")}</div>
+          ) : null}
+          {collectorHealth.scope_warning ? <div>{collectorHealth.scope_warning}</div> : null}
+        </section>
+      ) : null}
+
       <section className="report-filter-bar panel motion-stage-block">
         <div className="filter-pair">
           <span className="filter-label">Domain</span>
@@ -124,9 +138,14 @@ export function LogonReportWorkspace({
           <strong>{filters.search || "No text filter"}</strong>
         </div>
         <div className="filter-pair">
-          <span className="filter-label">Export</span>
+          <span className="filter-label">Collection / Export</span>
           <div className="filter-actions">
-            <strong>{formatDisplayDateTime(logonSummary.latest_activity_time_utc, "No data yet")}</strong>
+            <strong>
+              {formatDisplayDateTime(
+                collectorHealth?.latest_checkpoint_time_utc ?? logonSummary.latest_activity_time_utc,
+                "No data yet",
+              )}
+            </strong>
             <a className="filter-export" href={exportUrl} target="_blank" rel="noreferrer">
               Export CSV
             </a>

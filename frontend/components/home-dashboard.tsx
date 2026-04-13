@@ -242,11 +242,26 @@ export function HomeDashboard({
   const logon = dashboard.logon_summary;
   const recent = dashboard.recent_activity;
   const actionMap = buildUserActionMap(activity.action_counts ?? []);
+  const activityCollectorHealth = activity.collector_health;
+  const logonCollectorHealth = logon.collector_health;
 
   const lastUpdateLabel = formatDisplayDateTime(
-    activity.latest_activity_time_utc ?? logon.latest_activity_time_utc ?? snapshot.captured_at_utc,
+    activityCollectorHealth?.latest_checkpoint_time_utc ??
+      logonCollectorHealth?.latest_checkpoint_time_utc ??
+      snapshot.captured_at_utc ??
+      activity.latest_activity_time_utc ??
+      logon.latest_activity_time_utc,
     "No data yet",
   );
+  const healthSignals = [
+    activityCollectorHealth && activityCollectorHealth.status !== "healthy"
+      ? `AD change collection: ${activityCollectorHealth.message}`
+      : null,
+    logonCollectorHealth && logonCollectorHealth.status !== "healthy"
+      ? `Authentication collection: ${logonCollectorHealth.message}`
+      : null,
+    logonCollectorHealth?.scope_warning ?? null,
+  ].filter(Boolean) as string[];
 
   const summarizeRunNow = (result: DashboardRunNowResult) => {
     if (result.error) {
@@ -443,6 +458,16 @@ export function HomeDashboard({
         {dashboard.error ? <span className="home-preview-flag home-preview-flag-danger">{dashboard.error}</span> : null}
       </section>
 
+      {healthSignals.length ? (
+        <section className="motion-stage-block">
+          {healthSignals.map((message) => (
+            <div className="banner banner-danger" key={message}>
+              {message}
+            </div>
+          ))}
+        </section>
+      ) : null}
+
       <section className="dashboard-focus-grid motion-stage-block">
         <article className="dashboard-focus-card dashboard-focus-card-primary">
           <div className="dashboard-focus-head">
@@ -615,8 +640,13 @@ export function HomeDashboard({
                   <strong>Active Directory</strong>
                 </div>
                 <div className="summary-strip-cell">
-                  <span className="summary-strip-label">Latest auth activity</span>
-                  <strong>{formatDisplayDateTime(logon.latest_activity_time_utc, "No data yet")}</strong>
+                  <span className="summary-strip-label">Latest auth collection</span>
+                  <strong>
+                    {formatDisplayDateTime(
+                      logonCollectorHealth?.latest_checkpoint_time_utc ?? logon.latest_activity_time_utc,
+                      "No data yet",
+                    )}
+                  </strong>
                 </div>
                 <div className="summary-strip-cell">
                   <span className="summary-strip-label">Snapshot captured</span>

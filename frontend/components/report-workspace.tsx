@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { HorizontalBars } from "@/components/charts";
 import { PaginationFooter, TablePanel, usePagination } from "@/components/configuration/paginated-table";
 import { SectionPanel, StatCard } from "@/components/cards";
-import { ActivityQueryResult, SnapshotRun, buildActivityExportUrl } from "@/lib/api";
+import { ActivityQueryResult, MetricSummary, SnapshotRun, buildActivityExportUrl } from "@/lib/api";
 import { formatDisplayDateTime } from "@/lib/datetime";
 import { formatPrincipalDisplay } from "@/lib/identity";
 import { ReportDefinition } from "@/lib/navigation";
@@ -25,6 +25,7 @@ export function ReportWorkspace({
   snapshotSummary,
   snapshotRuns,
   activityQuery,
+  activitySummary,
   filters,
 }: {
   report: ReportDefinition;
@@ -37,6 +38,7 @@ export function ReportWorkspace({
   };
   snapshotRuns: SnapshotRun[];
   activityQuery: ActivityQueryResult;
+  activitySummary: MetricSummary;
   filters: {
     actor?: string;
     domainController?: string;
@@ -58,6 +60,7 @@ export function ReportWorkspace({
     (row) => row.attribute_operation || "Unknown operation",
   ).slice(0, 6);
   const snapshot = snapshotSummary;
+  const collectorHealth = activitySummary.collector_health;
   const exportUrl = buildActivityExportUrl({
     reportKey: report.key,
     actor: filters.actor,
@@ -82,9 +85,25 @@ export function ReportWorkspace({
       : report.capability === "activity" 
         ? "accent" 
         : "alert";
+  const showCollectorWarning = Boolean(
+    collectorHealth && (collectorHealth.status !== "healthy" || collectorHealth.scope_warning),
+  );
 
   return (
     <AppShell title={report.title} subtitle={report.description} eyebrow={report.category} heroMode="none">
+      {showCollectorWarning ? (
+        <section
+          className={`banner motion-stage-block${collectorHealth?.status === "stale" ? " banner-danger" : ""}`}
+        >
+          <strong>Collector health</strong>
+          <div>{collectorHealth?.message}</div>
+          {collectorHealth?.latest_checkpoint_time_utc ? (
+            <div>Latest checkpoint: {formatDisplayDateTime(collectorHealth.latest_checkpoint_time_utc, "-")}</div>
+          ) : null}
+          {collectorHealth?.scope_warning ? <div>{collectorHealth.scope_warning}</div> : null}
+        </section>
+      ) : null}
+
       <section className="report-stage motion-stage-block">
         <div className="report-stage-copy">
           <span className="report-stage-kicker">{report.category}</span>
@@ -184,7 +203,9 @@ export function ReportWorkspace({
           <div className="plain-copy">
             {report.capability === "planned"
               ? "This menu area is scaffolded and visible in the console, but it still needs a matching collector or enrichment pipeline before it can show live report-grade evidence."
-              : "This menu area is already connected to live or persisted backend data. The next step is deeper filtering, export controls, and saved report presets."}
+              : collectorHealth
+                ? collectorHealth.scope_warning || collectorHealth.message
+                : "This menu area is already connected to live or persisted backend data. The next step is deeper filtering, export controls, and saved report presets."}
           </div>
         </SectionPanel>
       </section>

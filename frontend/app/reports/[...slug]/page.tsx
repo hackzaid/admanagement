@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 
 import {
   getActivityQuery,
+  getActivitySummary,
   getLogonQuery,
   getLogonSummary,
   getSnapshotDrift,
@@ -125,7 +126,7 @@ export default async function ReportPage({
     );
   }
 
-  const [snapshotSummary, snapshotRuns, activityQuery] = await Promise.all([
+  const [snapshotSummary, snapshotRuns, activityQuery, activitySummary] = await Promise.all([
     getSnapshotSummary(),
     getSnapshotRuns(),
     getActivityQuery({
@@ -137,6 +138,7 @@ export default async function ReportPage({
       endTimeUtc: filters.end,
       limit: 100,
     }),
+    getActivitySummary(),
   ]);
 
   return (
@@ -145,6 +147,7 @@ export default async function ReportPage({
       snapshotSummary={snapshotSummary}
       snapshotRuns={snapshotRuns}
       activityQuery={activityQuery}
+      activitySummary={activitySummary}
       filters={{
         actor: filters.actor,
         domainController: filters.dc,

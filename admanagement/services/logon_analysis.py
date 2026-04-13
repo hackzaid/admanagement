@@ -13,6 +13,8 @@ from admanagement.db.session import SessionLocal
 from admanagement.models.checkpoint import EventCheckpoint
 from admanagement.models.logon_activity import LogonActivity
 from admanagement.services.activity_analysis import normalize_iso_datetime
+from admanagement.core.config import get_settings
+from admanagement.services.collector_health import build_logon_collector_health
 
 
 def parse_logon_time(value: str) -> datetime:
@@ -248,6 +250,7 @@ class LogonAnalysisService:
             },
             "failure_ip_sources": [{"source": source, "count": count} for source, count in failure_ip_sources],
             "lockout_workstations": [{"source": source, "count": count} for source, count in lockout_workstations],
+            "collector_health": build_logon_collector_health(get_settings()),
         }
 
     def query_logons(
