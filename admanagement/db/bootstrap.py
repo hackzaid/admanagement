@@ -18,7 +18,16 @@ def _ensure_column(table_name: str, column_name: str, ddl: str) -> None:
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+    _ensure_column("logon_activity", "target_domain_name", "VARCHAR(255)")
+    _ensure_column("logon_activity", "source_workstation", "VARCHAR(255)")
+    _ensure_column("logon_activity", "source_ip_address", "VARCHAR(64)")
+    _ensure_column("logon_activity", "source_port", "VARCHAR(32)")
+    _ensure_column("logon_activity", "logon_type", "VARCHAR(32)")
+    _ensure_column("logon_activity", "authentication_package", "VARCHAR(64)")
     _ensure_column("logon_activity", "failure_status", "VARCHAR(64)")
     _ensure_column("logon_activity", "failure_sub_status", "VARCHAR(64)")
     _ensure_column("logon_activity", "failure_reason", "TEXT")
+    _ensure_column("logon_activity", "logon_id", "VARCHAR(64)")
+    _ensure_column("logon_activity", "event_id", "INTEGER DEFAULT 0")
+    _ensure_column("logon_activity", "event_record_id", "INTEGER")
     _ensure_column("logon_activity", "raw_payload", "TEXT")
