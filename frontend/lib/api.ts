@@ -385,6 +385,7 @@ export type CollectorHealth = {
 };
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
+const REPORT_API_TIMEOUT_MS = 30000;
 
 function shouldThrowApiFallback(error: unknown) {
   if (typeof window === "undefined") {
@@ -656,7 +657,7 @@ export async function getSnapshotRuns(): Promise<SnapshotRun[]> {
 
 export async function getSnapshotSummary(): Promise<SnapshotSummary> {
   try {
-    return await fetchJson<SnapshotSummary>("/api/snapshots/summary");
+    return await fetchJson<SnapshotSummary>("/api/snapshots/summary", { timeoutMs: REPORT_API_TIMEOUT_MS });
   } catch (error) {
     shouldThrowApiFallback(error);
     return {
@@ -685,7 +686,9 @@ export async function getSnapshotFindings(params: {
   query.set("offset", String(params.offset ?? 0));
 
   try {
-    return await fetchJson<SnapshotFindingQueryResult>(`/api/snapshots/findings?${query.toString()}`);
+    return await fetchJson<SnapshotFindingQueryResult>(`/api/snapshots/findings?${query.toString()}`, {
+      timeoutMs: REPORT_API_TIMEOUT_MS,
+    });
   } catch (error) {
     shouldThrowApiFallback(error);
     return {
@@ -962,7 +965,7 @@ export async function upsertAuditPolicyExpectation(payload: {
 
 export async function getLogonSummary(): Promise<LogonSummary> {
   try {
-    return await fetchJson<LogonSummary>("/api/logons/summary?limit=12");
+    return await fetchJson<LogonSummary>("/api/logons/summary?limit=12", { timeoutMs: REPORT_API_TIMEOUT_MS });
   } catch (error) {
       shouldThrowApiFallback(error);
       return {
@@ -1009,7 +1012,9 @@ export async function getLogonQuery(params: {
   query.set("offset", String(params.offset ?? 0));
 
   try {
-    return await fetchJson<LogonQueryResult>(`/api/logons/query?${query.toString()}`);
+    return await fetchJson<LogonQueryResult>(`/api/logons/query?${query.toString()}`, {
+      timeoutMs: REPORT_API_TIMEOUT_MS,
+    });
   } catch (error) {
     shouldThrowApiFallback(error);
     return {
