@@ -74,7 +74,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
-        INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://backend:8000}
+        INTERNAL_API_BASE_URL: http://backend:8000
     restart: unless-stopped
     # Do not attach the root .env file to the frontend container; it contains backend secrets.
     # Only expose the API URLs the Next.js runtime needs.
@@ -83,7 +83,7 @@ services:
         condition: service_started
     environment:
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
-      INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://backend:8000}
+      INTERNAL_API_BASE_URL: http://backend:8000
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
 
