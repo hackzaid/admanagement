@@ -261,16 +261,20 @@ class ConfigurationService:
     ) -> dict[str, Any]:
         init_db()
         now = datetime.now(timezone.utc)
+        cleaned_hostname = hostname.strip()
+        if not cleaned_hostname:
+            raise ValueError("Domain controller hostname is required.")
+
         with SessionLocal() as session:
             domain = self._ensure_seeded(session)
             row = session.execute(
-                select(DomainControllerConfig).where(DomainControllerConfig.hostname == hostname)
+                select(DomainControllerConfig).where(DomainControllerConfig.hostname == cleaned_hostname)
             ).scalar_one_or_none()
             if row is None:
                 row = DomainControllerConfig(
                     domain_id=domain.id,
-                    name=name or hostname.split(".")[0],
-                    hostname=hostname,
+                    name=name or cleaned_hostname.split(".")[0],
+                    hostname=cleaned_hostname,
                     event_fetch_interval_seconds=event_fetch_interval_seconds,
                     status=status,
                     is_enabled=is_enabled,
@@ -279,6 +283,7 @@ class ConfigurationService:
                 )
                 session.add(row)
             else:
+                row.domain_id = domain.id
                 row.name = name or row.name
                 row.event_fetch_interval_seconds = event_fetch_interval_seconds
                 row.is_enabled = is_enabled
@@ -503,18 +508,7 @@ class ConfigurationService:
         )
 
         for hostname in self.settings.event_dc_list:
-            session.add(
-                DomainControllerConfig(
-                    domain_id=domain.id,
-                    name=hostname.split(".")[0],
-                    hostname=hostname,
-                    event_fetch_interval_seconds=max(self.settings.activity_poll_interval_minutes * 60, 60),
-                    status="configured",
-                    is_enabled=True,
-                    created_at_utc=now,
-                    updated_at_utc=now,
-                )
-            )
+            self._upsert_seeded_controller(session, domain, hostname, now)
 
         for item in DEFAULT_ALERT_RULES:
             session.add(
@@ -558,20 +552,48 @@ class ConfigurationService:
         }
         now = datetime.now(timezone.utc)
         for hostname in self.settings.event_dc_list:
-            if hostname in existing_hosts:
+            cleaned_hostname = hostname.strip()
+            if not cleaned_hostname or cleaned_hostname in existing_hosts:
                 continue
+            self._upsert_seeded_controller(session, domain, cleaned_hostname, now)
+
+    def _upsert_seeded_controller(
+        self,
+        session,
+        domain: MonitoredDomain,
+        hostname: str,
+        now: datetime,
+    ) -> None:
+        cleaned_hostname = hostname.strip()
+        if not cleaned_hostname:
+            return
+
+        row = session.execute(
+            select(DomainControllerConfig).where(DomainControllerConfig.hostname == cleaned_hostname)
+        ).scalar_one_or_none()
+        interval_seconds = max(self.settings.activity_poll_interval_minutes * 60, 60)
+        if row is None:
             session.add(
                 DomainControllerConfig(
                     domain_id=domain.id,
-                    name=hostname.split(".")[0],
-                    hostname=hostname,
-                    event_fetch_interval_seconds=max(self.settings.activity_poll_interval_minutes * 60, 60),
+                    name=cleaned_hostname.split(".")[0],
+                    hostname=cleaned_hostname,
+                    event_fetch_interval_seconds=interval_seconds,
                     status="configured",
                     is_enabled=True,
                     created_at_utc=now,
                     updated_at_utc=now,
                 )
             )
+            session.flush()
+            return
+
+        row.domain_id = domain.id
+        row.name = row.name or cleaned_hostname.split(".")[0]
+        row.event_fetch_interval_seconds = interval_seconds
+        row.status = row.status or "configured"
+        row.is_enabled = True
+        row.updated_at_utc = now
 
     def _checkpoint_map(self, session) -> dict[str, datetime | None]:
         rows = session.execute(select(EventCheckpoint)).scalars().all()
