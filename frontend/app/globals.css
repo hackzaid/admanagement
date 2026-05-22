@@ -58,6 +58,58 @@ a {
   text-decoration: none;
 }
 
+.error-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.error-panel {
+  width: min(100%, 620px);
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--danger);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.error-panel h1 {
+  margin: 8px 0 10px;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.55rem, 3vw, 2rem);
+  line-height: 1.1;
+}
+
+.error-panel p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.error-digest {
+  margin-top: 14px !important;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-soft);
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 0.82rem;
+  word-break: break-word;
+}
+
+.error-panel button {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border: 1px solid rgba(13, 124, 134, 0.22);
+  border-radius: 7px;
+  background: var(--accent);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .shell {
   display: grid;
   grid-template-columns: 264px 1fr;

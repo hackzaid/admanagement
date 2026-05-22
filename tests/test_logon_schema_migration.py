@@ -51,6 +51,8 @@ def test_logon_activity_bootstrap_adds_newer_columns() -> None:
         columns = {column["name"] for column in inspect(engine).get_columns("logon_activity")}
         assert "source_port" in columns
         assert "logon_id" in columns
+        indexes = {index["name"] for index in inspect(engine).get_indexes("logon_activity")}
+        assert "ix_logon_activity_dc_record" in indexes
 
         result = LogonAnalysisService().query_logons(limit=1)
         assert result["total_count"] == 1

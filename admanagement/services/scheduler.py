@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from threading import Lock
+from time import monotonic
 from typing import Any
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -24,7 +25,12 @@ class CollectorScheduler:
         self.update_monitor = update_monitor
         self._scheduler = BackgroundScheduler(timezone=timezone.utc)
         self._lock = Lock()
-        self._run_lock = Lock()
+        self._job_locks = {
+            "ldap_snapshot": Lock(),
+            "activity_poll": Lock(),
+            "logon_poll": Lock(),
+            "update_check": Lock(),
+        }
         self._latest_results: dict[str, dict[str, Any]] = {}
 
     def start(self) -> None:
@@ -93,44 +99,59 @@ class CollectorScheduler:
         }
 
     def run_now(self, *, include_snapshot: bool = False) -> dict[str, Any]:
-        with self._run_lock:
-            triggered_at = datetime.now(timezone.utc).isoformat()
-            results: dict[str, dict[str, Any]] = {}
-            try:
-                results["activity_poll"] = self._execute_activity_poll()
-            except Exception as exc:
-                results["activity_poll"] = {"error": str(exc), "timestamp_utc": datetime.now(timezone.utc).isoformat()}
-            try:
-                results["logon_poll"] = self._execute_logon_poll()
-            except Exception as exc:
-                results["logon_poll"] = {"error": str(exc), "timestamp_utc": datetime.now(timezone.utc).isoformat()}
-            if include_snapshot:
-                try:
-                    results["ldap_snapshot"] = self._execute_ldap_snapshot()
-                except Exception as exc:
-                    results["ldap_snapshot"] = {"error": str(exc), "timestamp_utc": datetime.now(timezone.utc).isoformat()}
+        triggered_at = datetime.now(timezone.utc).isoformat()
+        results: dict[str, dict[str, Any]] = {}
+        results["activity_poll"] = self._run_job("activity_poll", self._execute_activity_poll)
+        results["logon_poll"] = self._run_job("logon_poll", self._execute_logon_poll)
+        if include_snapshot:
+            results["ldap_snapshot"] = self._run_job("ldap_snapshot", self._execute_ldap_snapshot)
 
-            return {
-                "triggered_at_utc": triggered_at,
-                "include_snapshot": include_snapshot,
-                "results": results,
-            }
+        return {
+            "triggered_at_utc": triggered_at,
+            "include_snapshot": include_snapshot,
+            "results": results,
+        }
 
     def _run_ldap_snapshot(self) -> dict[str, Any]:
-        with self._run_lock:
-            return self._execute_ldap_snapshot()
+        return self._run_job("ldap_snapshot", self._execute_ldap_snapshot)
 
     def _run_activity_poll(self) -> dict[str, Any]:
-        with self._run_lock:
-            return self._execute_activity_poll()
+        return self._run_job("activity_poll", self._execute_activity_poll)
 
     def _run_logon_poll(self) -> dict[str, Any]:
-        with self._run_lock:
-            return self._execute_logon_poll()
+        return self._run_job("logon_poll", self._execute_logon_poll)
 
     def _run_update_check(self) -> dict[str, Any]:
-        with self._run_lock:
-            return self._execute_update_check()
+        return self._run_job("update_check", self._execute_update_check)
+
+    def _run_job(self, job_id: str, executor: Any) -> dict[str, Any]:
+        job_lock = self._job_locks[job_id]
+        if not job_lock.acquire(blocking=False):
+            result = {
+                "status": "skipped",
+                "reason": "Previous run is still active.",
+                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            }
+            self._store_result(job_id, result)
+            logger.warning("Collector job %s skipped because a previous run is still active", job_id)
+            return result
+
+        started_at = datetime.now(timezone.utc)
+        started_monotonic = monotonic()
+        logger.info("Collector job %s started", job_id)
+        try:
+            result = executor()
+            result.setdefault("status", "error" if result.get("error") else "completed")
+            return result
+        finally:
+            duration_seconds = round(monotonic() - started_monotonic, 3)
+            logger.info("Collector job %s finished in %.3fs", job_id, duration_seconds)
+            with self._lock:
+                latest = self._latest_results.get(job_id)
+                if latest is not None:
+                    latest.setdefault("started_at_utc", started_at.isoformat())
+                    latest["duration_seconds"] = duration_seconds
+            job_lock.release()
 
     def _execute_ldap_snapshot(self) -> dict[str, Any]:
         try:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String, Text
+from sqlalchemy import DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from admanagement.db.base import Base
@@ -10,6 +10,12 @@ from admanagement.db.base import Base
 
 class LogonActivity(Base):
     __tablename__ = "logon_activity"
+    __table_args__ = (
+        Index("ix_logon_activity_dc_record", "domain_controller", "event_record_id"),
+        Index("ix_logon_activity_time_event", "activity_time_utc", "event_type"),
+        Index("ix_logon_activity_time_logon_type", "activity_time_utc", "logon_type"),
+        Index("ix_logon_activity_time_actor", "activity_time_utc", "actor"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     actor: Mapped[str] = mapped_column(String(255), index=True)

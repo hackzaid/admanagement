@@ -44,20 +44,40 @@ class LogonAnalysisService:
         duplicate_rows = 0
 
         with SessionLocal() as session:
+            candidate_keys: set[tuple[str, int]] = set()
+            for row in records:
+                event_record_id = parse_optional_int(str(row.get("event_record_id", "") or ""))
+                if event_record_id is None:
+                    continue
+                domain_controller = (row.get("domain_controller") or "").strip() or source_name
+                candidate_keys.add((domain_controller, event_record_id))
+
+            existing_keys: set[tuple[str, int]] = set()
+            if candidate_keys:
+                domain_controllers = {domain_controller for domain_controller, _ in candidate_keys}
+                event_record_ids = {event_record_id for _, event_record_id in candidate_keys}
+                existing_rows = session.execute(
+                    select(LogonActivity.domain_controller, LogonActivity.event_record_id).where(
+                        LogonActivity.domain_controller.in_(domain_controllers),
+                        LogonActivity.event_record_id.in_(event_record_ids),
+                    )
+                ).all()
+                existing_keys = {
+                    (domain_controller, event_record_id)
+                    for domain_controller, event_record_id in existing_rows
+                    if event_record_id is not None
+                }
+
             for row in records:
                 domain_controller = (row.get("domain_controller") or "").strip() or source_name
                 event_record_id = parse_optional_int(str(row.get("event_record_id", "") or ""))
 
                 if event_record_id is not None:
-                    existing = session.execute(
-                        select(LogonActivity.id).where(
-                            LogonActivity.domain_controller == domain_controller,
-                            LogonActivity.event_record_id == event_record_id,
-                        )
-                    ).first()
-                    if existing:
+                    record_key = (domain_controller, event_record_id)
+                    if record_key in existing_keys:
                         duplicate_rows += 1
                         continue
+                    existing_keys.add(record_key)
 
                 session.add(
                     LogonActivity(

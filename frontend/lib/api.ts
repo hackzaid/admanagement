@@ -387,9 +387,10 @@ export type CollectorHealth = {
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 const REPORT_API_TIMEOUT_MS = 30000;
 
-function shouldThrowApiFallback(error: unknown) {
+function logApiFallback(error: unknown) {
   if (typeof window === "undefined") {
-    throw (error instanceof Error ? error : new Error("API request failed."));
+    const message = error instanceof Error ? error.message : "API request failed.";
+    console.error(`[admanagement] Rendering with API fallback: ${message}`);
   }
   return false;
 }
@@ -531,7 +532,7 @@ export async function getUpdateStatus(refresh = false): Promise<UpdateStatus> {
   try {
     return await fetchJson<UpdateStatus>(`/api/system/update-status${refresh ? "?refresh=true" : ""}`);
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return {
       status: "unknown",
       current_version: "",
@@ -547,7 +548,7 @@ export async function getSystemOverview(refresh = false): Promise<SystemOverview
   try {
     return await fetchJson<SystemOverview>(`/api/system/overview${refresh ? "?refresh=true" : ""}`);
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return {
       health: {
         status: "unknown",
@@ -599,7 +600,7 @@ export async function getDashboardOverviewFiltered(params?: {
   try {
     return await fetchJson<DashboardOverview>(`/api/dashboard${suffix}`, { timeoutMs: 20000 });
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     const message = error instanceof Error ? error.message : "Dashboard data is unavailable.";
     return {
       snapshot_summary: {
@@ -650,7 +651,7 @@ export async function getSnapshotRuns(): Promise<SnapshotRun[]> {
   try {
     return await fetchJson<SnapshotRun[]>("/api/snapshots/runs?limit=12");
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return [];
   }
 }
@@ -659,7 +660,7 @@ export async function getSnapshotSummary(): Promise<SnapshotSummary> {
   try {
     return await fetchJson<SnapshotSummary>("/api/snapshots/summary", { timeoutMs: REPORT_API_TIMEOUT_MS });
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return {
       run_id: null,
       captured_at_utc: null,
@@ -690,7 +691,7 @@ export async function getSnapshotFindings(params: {
       timeoutMs: REPORT_API_TIMEOUT_MS,
     });
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return {
       run_id: params.runId ?? null,
       finding: params.finding,
@@ -716,7 +717,7 @@ export async function getSnapshotDrift(params: {
   try {
     return await fetchJson<SnapshotDrift>(`/api/snapshots/drift?${query.toString()}`);
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return null;
   }
 }
@@ -725,7 +726,7 @@ export async function getActivitySummary(): Promise<MetricSummary> {
   try {
     return await fetchJson<MetricSummary>("/api/activity/summary?limit=12");
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
       return {
         total_count: 0,
         latest_activity_time_utc: null,
@@ -741,7 +742,7 @@ export async function getRecentActivity(): Promise<DashboardOverview["recent_act
   try {
     return await fetchJson<DashboardOverview["recent_activity"]>("/api/activity/recent?limit=20");
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return [];
   }
 }
@@ -769,7 +770,7 @@ export async function getActivityQuery(params: {
   try {
     return await fetchJson<ActivityQueryResult>(`/api/activity/query?${query.toString()}`);
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return {
       total_count: 0,
       limit: params.limit ?? 50,
@@ -803,7 +804,7 @@ export async function getReportCatalog(): Promise<ReportCatalogItem[]> {
   try {
     return await fetchJson<ReportCatalogItem[]>("/api/reports/catalog");
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return [];
   }
 }
@@ -812,7 +813,7 @@ export async function getSavedReports(): Promise<SavedReport[]> {
   try {
     return await fetchJson<SavedReport[]>("/api/reports/saved");
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return [];
   }
 }
@@ -821,7 +822,7 @@ export async function getSavedDashboardViews(): Promise<SavedDashboardView[]> {
   try {
     return await fetchJson<SavedDashboardView[]>("/api/reports/saved-views?view_scope=dashboard");
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return [];
   }
 }
@@ -850,7 +851,7 @@ export async function getConfigurationOverview(): Promise<ConfigurationOverview>
   try {
     return await fetchJson<ConfigurationOverview>("/api/configuration/overview");
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     const message = error instanceof Error ? error.message : "Configuration data is unavailable.";
     return {
       must_have_modules: [],
@@ -967,7 +968,7 @@ export async function getLogonSummary(): Promise<LogonSummary> {
   try {
     return await fetchJson<LogonSummary>("/api/logons/summary?limit=12", { timeoutMs: REPORT_API_TIMEOUT_MS });
   } catch (error) {
-      shouldThrowApiFallback(error);
+      logApiFallback(error);
       return {
         total_count: 0,
         latest_activity_time_utc: null,
@@ -1016,7 +1017,7 @@ export async function getLogonQuery(params: {
       timeoutMs: REPORT_API_TIMEOUT_MS,
     });
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return {
       total_count: 0,
       limit: params.limit ?? 50,
@@ -1062,7 +1063,7 @@ export async function getSetupStatus(): Promise<SetupStatus> {
   try {
     return await fetchJson<SetupStatus>("/api/setup/status");
   } catch (error) {
-    shouldThrowApiFallback(error);
+    logApiFallback(error);
     return {
       onboarding_required: true,
       onboarding_completed: false,

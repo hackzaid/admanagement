@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import logging
+from time import monotonic
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +29,7 @@ from admanagement.services.update_monitor import UpdateMonitor
 
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -64,27 +67,38 @@ app.add_middleware(
 
 @app.middleware("http")
 async def require_authentication(request: Request, call_next):
+    started = monotonic()
     path = request.url.path
-    if not path.startswith("/api"):
+    try:
+        if not path.startswith("/api"):
+            return await call_next(request)
+
+        public_prefixes = ("/api/health", "/api/setup", "/api/auth")
+        if path.startswith(public_prefixes):
+            return await call_next(request)
+
+        authorization = request.headers.get("authorization", "")
+        token = ""
+        if authorization.lower().startswith("bearer "):
+            token = authorization.split(" ", 1)[1].strip()
+        if not token:
+            token = request.headers.get("x-ad-session", "").strip()
+
+        session = AuthService(settings).get_session(token)
+        if session is None:
+            return JSONResponse(status_code=401, content={"detail": "Authentication required."})
+
+        request.state.auth_session = session
         return await call_next(request)
-
-    public_prefixes = ("/api/health", "/api/setup", "/api/auth")
-    if path.startswith(public_prefixes):
-        return await call_next(request)
-
-    authorization = request.headers.get("authorization", "")
-    token = ""
-    if authorization.lower().startswith("bearer "):
-        token = authorization.split(" ", 1)[1].strip()
-    if not token:
-        token = request.headers.get("x-ad-session", "").strip()
-
-    session = AuthService(settings).get_session(token)
-    if session is None:
-        return JSONResponse(status_code=401, content={"detail": "Authentication required."})
-
-    request.state.auth_session = session
-    return await call_next(request)
+    finally:
+        duration_seconds = monotonic() - started
+        if path.startswith("/api") and duration_seconds >= 5:
+            logger.warning(
+                "Slow API request completed path=%s method=%s duration_seconds=%.3f",
+                path,
+                request.method,
+                duration_seconds,
+            )
 
 app.include_router(web_router)
 app.include_router(health_router, prefix="/api")

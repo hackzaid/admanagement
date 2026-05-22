@@ -16,6 +16,12 @@ def _ensure_column(table_name: str, column_name: str, ddl: str) -> None:
         connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {ddl}"))
 
 
+def _ensure_model_indexes() -> None:
+    for table in Base.metadata.sorted_tables:
+        for index in table.indexes:
+            index.create(bind=engine, checkfirst=True)
+
+
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
     _ensure_column("logon_activity", "target_domain_name", "VARCHAR(255)")
@@ -31,3 +37,4 @@ def init_db() -> None:
     _ensure_column("logon_activity", "event_id", "INTEGER DEFAULT 0")
     _ensure_column("logon_activity", "event_record_id", "INTEGER")
     _ensure_column("logon_activity", "raw_payload", "TEXT")
+    _ensure_model_indexes()
