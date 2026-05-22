@@ -390,6 +390,99 @@ class ActivityAnalysisService:
             "collector_health": build_activity_collector_health(self.settings),
         }
 
+    def summarize_for_dashboard(
+        self,
+        *,
+        limit: int = 10,
+        start_time_utc: str | None = None,
+        end_time_utc: str | None = None,
+    ) -> dict[str, Any]:
+        with SessionLocal() as session:
+            count_statement = self._apply_activity_filters(
+                statement=select(func.count(AdminActivity.id), func.max(AdminActivity.activity_time_utc)),
+                actor=None,
+                action=None,
+                target_type=None,
+                domain_controller=None,
+                report_key=None,
+                search=None,
+                start_time_utc=start_time_utc,
+                end_time_utc=end_time_utc,
+            )
+            total_count, latest_time = session.execute(count_statement).one()
+
+            top_actors_statement = self._apply_activity_filters(
+                statement=select(AdminActivity.actor, func.count(AdminActivity.id)),
+                actor=None,
+                action=None,
+                target_type=None,
+                domain_controller=None,
+                report_key=None,
+                search=None,
+                start_time_utc=start_time_utc,
+                end_time_utc=end_time_utc,
+            )
+            top_actors = session.execute(
+                top_actors_statement
+                .group_by(AdminActivity.actor)
+                .order_by(func.count(AdminActivity.id).desc())
+                .limit(limit)
+            ).all()
+
+            action_counts_statement = self._apply_activity_filters(
+                statement=select(AdminActivity.target_type, AdminActivity.action, func.count(AdminActivity.id)),
+                actor=None,
+                action=None,
+                target_type=None,
+                domain_controller=None,
+                report_key=None,
+                search=None,
+                start_time_utc=start_time_utc,
+                end_time_utc=end_time_utc,
+            )
+            action_counts = session.execute(
+                action_counts_statement
+                .group_by(AdminActivity.target_type, AdminActivity.action)
+                .order_by(func.count(AdminActivity.id).desc())
+                .limit(limit)
+            ).all()
+
+            recent_deletes_statement = self._apply_activity_filters(
+                statement=select(AdminActivity),
+                actor=None,
+                action="Delete",
+                target_type=None,
+                domain_controller=None,
+                report_key=None,
+                search=None,
+                start_time_utc=start_time_utc,
+                end_time_utc=end_time_utc,
+            )
+            recent_deletes = session.execute(
+                recent_deletes_statement.order_by(AdminActivity.activity_time_utc.desc()).limit(limit)
+            ).scalars().all()
+
+        return {
+            "total_count": total_count,
+            "latest_activity_time_utc": latest_time.isoformat() if latest_time else None,
+            "top_actors": [{"actor": actor, "count": count} for actor, count in top_actors],
+            "action_counts": [
+                {"target_type": target_type, "action": action, "count": count}
+                for target_type, action, count in action_counts
+            ],
+            "recent_deletes": [
+                {
+                    "time_utc": row.activity_time_utc.isoformat(),
+                    "actor": row.actor,
+                    "target_type": row.target_type,
+                    "target_name": row.target_name,
+                    "domain_controller": row.domain_controller,
+                }
+                for row in recent_deletes
+            ],
+            "collector_health": build_activity_collector_health(self.settings),
+        }
+
     def recent_activity(
         self,
         limit: int = 20,

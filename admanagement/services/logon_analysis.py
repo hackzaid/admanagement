@@ -273,6 +273,139 @@ class LogonAnalysisService:
             "collector_health": build_logon_collector_health(get_settings()),
         }
 
+    def summarize_for_dashboard(
+        self,
+        *,
+        limit: int = 10,
+        start_time_utc: str | None = None,
+        end_time_utc: str | None = None,
+    ) -> dict[str, Any]:
+        with SessionLocal() as session:
+            count_statement = self._apply_filters(
+                statement=select(func.count(LogonActivity.id), func.max(LogonActivity.activity_time_utc)),
+                actor=None,
+                domain_controller=None,
+                event_type=None,
+                event_types=None,
+                source_workstation=None,
+                source_ip_address=None,
+                logon_type=None,
+                authentication_package=None,
+                search=None,
+                start_time_utc=start_time_utc,
+                end_time_utc=end_time_utc,
+            )
+            total_count, latest_time = session.execute(count_statement).one()
+
+            top_users_statement = self._apply_filters(
+                statement=select(LogonActivity.actor, func.count(LogonActivity.id)),
+                actor=None,
+                domain_controller=None,
+                event_type=None,
+                event_types=None,
+                source_workstation=None,
+                source_ip_address=None,
+                logon_type=None,
+                authentication_package=None,
+                search=None,
+                start_time_utc=start_time_utc,
+                end_time_utc=end_time_utc,
+            )
+            top_users = session.execute(
+                top_users_statement
+                .group_by(LogonActivity.actor)
+                .order_by(func.count(LogonActivity.id).desc())
+                .limit(limit)
+            ).all()
+
+            top_failure_users_statement = self._apply_filters(
+                statement=select(LogonActivity.actor, func.count(LogonActivity.id)),
+                actor=None,
+                domain_controller=None,
+                event_type=None,
+                event_types=["LogonFailure", "AccountLockout"],
+                source_workstation=None,
+                source_ip_address=None,
+                logon_type=None,
+                authentication_package=None,
+                search=None,
+                start_time_utc=start_time_utc,
+                end_time_utc=end_time_utc,
+            )
+            top_failure_users = session.execute(
+                top_failure_users_statement
+                .group_by(LogonActivity.actor)
+                .order_by(func.count(LogonActivity.id).desc())
+                .limit(limit)
+            ).all()
+
+            event_mix_statement = self._apply_filters(
+                statement=select(LogonActivity.event_type, func.count(LogonActivity.id)),
+                actor=None,
+                domain_controller=None,
+                event_type=None,
+                event_types=None,
+                source_workstation=None,
+                source_ip_address=None,
+                logon_type=None,
+                authentication_package=None,
+                search=None,
+                start_time_utc=start_time_utc,
+                end_time_utc=end_time_utc,
+            )
+            event_mix = session.execute(
+                event_mix_statement
+                .group_by(LogonActivity.event_type)
+                .order_by(func.count(LogonActivity.id).desc())
+            ).all()
+
+            source_key = func.coalesce(
+                LogonActivity.source_workstation,
+                LogonActivity.source_ip_address,
+                cast(literal("Unknown"), String),
+            )
+            top_failure_sources_statement = self._apply_filters(
+                statement=select(source_key, func.count(LogonActivity.id)),
+                actor=None,
+                domain_controller=None,
+                event_type=None,
+                event_types=["LogonFailure", "AccountLockout"],
+                source_workstation=None,
+                source_ip_address=None,
+                logon_type=None,
+                authentication_package=None,
+                search=None,
+                start_time_utc=start_time_utc,
+                end_time_utc=end_time_utc,
+            )
+            top_failure_sources = session.execute(
+                top_failure_sources_statement
+                .group_by(source_key)
+                .order_by(func.count(LogonActivity.id).desc())
+                .limit(limit)
+            ).all()
+
+        event_counts = {event_type: count for event_type, count in event_mix}
+        return {
+            "total_count": total_count,
+            "latest_activity_time_utc": latest_time.isoformat() if latest_time else None,
+            "top_users": [{"actor": actor, "count": count} for actor, count in top_users],
+            "top_failure_users": [{"actor": actor, "count": count} for actor, count in top_failure_users],
+            "event_mix": [{"event_type": event_type, "count": count} for event_type, count in event_mix],
+            "event_counts": event_counts,
+            "top_failure_sources": [{"source": source, "count": count} for source, count in top_failure_sources],
+            "top_failure_reasons": [],
+            "rdp_summary": {
+                "success_count": event_counts.get("Logon", 0),
+                "failure_count": event_counts.get("LogonFailure", 0),
+                "top_sources": [],
+                "recording_hosts": [],
+            },
+            "failure_ip_sources": [],
+            "lockout_workstations": [],
+            "collector_health": build_logon_collector_health(get_settings()),
+        }
+
     def query_logons(
         self,
         *,
