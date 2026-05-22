@@ -21,8 +21,7 @@ class DashboardService:
         start_time_utc: str | None = None,
         end_time_utc: str | None = None,
     ) -> dict[str, Any]:
-        latest_run_id = self.snapshot_service.latest_run_id()
-        snapshot_summary = self.snapshot_service.summarize_run(run_id=latest_run_id) if latest_run_id else {"run_id": None}
+        snapshot_summary = self.snapshot_service.summarize_for_dashboard()
         activity_summary = self.activity_service.summarize_for_dashboard(
             limit=self.settings.dashboard_recent_activity_limit,
             start_time_utc=start_time_utc,

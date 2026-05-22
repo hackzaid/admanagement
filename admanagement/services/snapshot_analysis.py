@@ -118,8 +118,39 @@ class SnapshotAnalysisService:
             return output
 
     def latest_run_id(self) -> str | None:
-        runs = self.list_runs(limit=1)
-        return runs[0]["run_id"] if runs else None
+        with SessionLocal() as session:
+            return session.execute(
+                select(DirectorySnapshot.run_id)
+                .order_by(DirectorySnapshot.captured_at_utc.desc(), DirectorySnapshot.id.desc())
+                .limit(1)
+            ).scalar_one_or_none()
+
+    def summarize_for_dashboard(self, run_id: str | None = None) -> dict[str, Any]:
+        selected_run_id = run_id or self.latest_run_id()
+        if not selected_run_id:
+            return {"run_id": None, "captured_at_utc": None, "counts": {}, "findings": {}}
+
+        with SessionLocal() as session:
+            captured_at_utc = session.execute(
+                select(func.max(DirectorySnapshot.captured_at_utc)).where(DirectorySnapshot.run_id == selected_run_id)
+            ).scalar_one_or_none()
+            counts = session.execute(
+                select(DirectorySnapshot.object_type, func.count(DirectorySnapshot.id))
+                .where(DirectorySnapshot.run_id == selected_run_id)
+                .group_by(DirectorySnapshot.object_type)
+            ).all()
+
+        return {
+            "run_id": selected_run_id,
+            "captured_at_utc": captured_at_utc.isoformat() if captured_at_utc else None,
+            "counts": {object_type: count for object_type, count in counts},
+            "findings": {
+                "stale_users": {"count": 0, "sample": []},
+                "stale_computers": {"count": 0, "sample": []},
+                "password_never_expires": {"count": 0, "sample": []},
+                "privileged_groups": {},
+            },
+        }
 
     def summarize_run(self, run_id: str | None = None, stale_days: int = 180) -> dict[str, Any]:
         selected_run_id = run_id or self.latest_run_id()

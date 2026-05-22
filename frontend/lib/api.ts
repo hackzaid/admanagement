@@ -447,7 +447,7 @@ function describeNetworkError(error: unknown, apiBaseUrl: string, path: string) 
       ? `${window.location.origin}${path}`
       : path;
   if (error instanceof DOMException && error.name === "TimeoutError") {
-    return `API request timed out while contacting ${endpoint}. Check whether the backend is running and reachable from the browser.`;
+    return `API request timed out while waiting for ${endpoint}. The backend is reachable, but this endpoint did not finish before the UI timeout.`;
   }
   if (error instanceof Error) {
     return `Could not reach the API at ${endpoint}. Check NEXT_PUBLIC_API_BASE_URL, backend port publishing, allowed frontend origins, and whether the backend is up. Browser error: ${error.message}`;
@@ -598,7 +598,7 @@ export async function getDashboardOverviewFiltered(params?: {
   const suffix = query.size ? `?${query.toString()}` : "";
 
   try {
-    return await fetchJson<DashboardOverview>(`/api/dashboard${suffix}`, { timeoutMs: 20000 });
+    return await fetchJson<DashboardOverview>(`/api/dashboard${suffix}`, { timeoutMs: 60000 });
   } catch (error) {
     logApiFallback(error);
     const message = error instanceof Error ? error.message : "Dashboard data is unavailable.";

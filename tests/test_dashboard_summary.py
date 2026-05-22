@@ -23,6 +23,7 @@ def test_dashboard_uses_lightweight_summaries() -> None:
         from admanagement.db.session import SessionLocal
         from admanagement.models.activity import AdminActivity
         from admanagement.models.logon_activity import LogonActivity
+        from admanagement.models.snapshot import DirectorySnapshot
         from admanagement.services.dashboard import DashboardService
 
         init_db()
@@ -65,6 +66,17 @@ def test_dashboard_uses_lightweight_summaries() -> None:
                     raw_payload=None,
                 )
             )
+            session.add(
+                DirectorySnapshot(
+                    run_id="run-1",
+                    snapshot_type="ldap",
+                    object_type="user",
+                    object_name="alice",
+                    distinguished_name="CN=alice,DC=example,DC=local",
+                    captured_at_utc=now,
+                    payload_json='{"userAccountControl": "512"}',
+                )
+            )
             session.commit()
 
         overview = DashboardService(get_settings()).build_overview(
@@ -74,6 +86,7 @@ def test_dashboard_uses_lightweight_summaries() -> None:
 
         assert overview["activity_summary"]["total_count"] == 1
         assert overview["activity_summary"]["recent_deletes"][0]["target_name"] == "bob"
+        assert overview["snapshot_summary"]["counts"]["user"] == 1
         assert overview["logon_summary"]["event_counts"]["LogonFailure"] == 1
         assert overview["logon_summary"]["top_failure_sources"][0]["source"] == "ws01"
         assert overview["recent_activity"][0]["target_name"] == "bob"

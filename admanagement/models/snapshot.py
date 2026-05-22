@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String, Text
+from sqlalchemy import DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from admanagement.db.base import Base
@@ -10,6 +10,10 @@ from admanagement.db.base import Base
 
 class DirectorySnapshot(Base):
     __tablename__ = "directory_snapshot"
+    __table_args__ = (
+        Index("ix_directory_snapshot_run_type", "run_id", "object_type"),
+        Index("ix_directory_snapshot_captured_run", "captured_at_utc", "run_id"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     run_id: Mapped[str] = mapped_column(String(64), index=True)
