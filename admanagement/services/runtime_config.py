@@ -39,19 +39,16 @@ class RuntimeConfigService:
         init_db()
         with SessionLocal() as session:
             setup_state = self._ensure_setup_state(session)
-            default_domain = session.execute(
-                select(MonitoredDomain).where(MonitoredDomain.is_default.is_(True))
-            ).scalar_one_or_none()
+            default_domain = self._default_domain(session)
+            controller_statement = select(DomainControllerConfig).where(DomainControllerConfig.is_enabled.is_(True))
+            if default_domain is not None:
+                controller_statement = controller_statement.where(DomainControllerConfig.domain_id == default_domain.id)
             controllers = (
-                session.execute(
-                    select(DomainControllerConfig).where(DomainControllerConfig.is_enabled.is_(True)).order_by(DomainControllerConfig.hostname)
-                )
+                session.execute(controller_statement.order_by(DomainControllerConfig.hostname))
                 .scalars()
                 .all()
             )
-            business_hours = (
-                session.execute(select(BusinessHoursConfig).order_by(BusinessHoursConfig.id)).scalar_one_or_none()
-            )
+            business_hours = self._business_hours_for_domain(session, default_domain)
             runtime_map = self._settings_map(session)
 
             has_domain = default_domain is not None and bool(default_domain.domain_fqdn)
@@ -135,13 +132,12 @@ class RuntimeConfigService:
         init_db()
         with SessionLocal() as session:
             runtime_map = self._settings_map(session)
-            default_domain = session.execute(
-                select(MonitoredDomain).where(MonitoredDomain.is_default.is_(True))
-            ).scalar_one_or_none()
+            default_domain = self._default_domain(session)
+            controller_statement = select(DomainControllerConfig).where(DomainControllerConfig.is_enabled.is_(True))
+            if default_domain is not None:
+                controller_statement = controller_statement.where(DomainControllerConfig.domain_id == default_domain.id)
             controllers = (
-                session.execute(
-                    select(DomainControllerConfig).where(DomainControllerConfig.is_enabled.is_(True)).order_by(DomainControllerConfig.hostname)
-                )
+                session.execute(controller_statement.order_by(DomainControllerConfig.hostname))
                 .scalars()
                 .all()
             )
@@ -179,6 +175,26 @@ class RuntimeConfigService:
             session.add(row)
             session.flush()
         return row
+
+    def _default_domain(self, session) -> MonitoredDomain | None:
+        return session.execute(
+            select(MonitoredDomain)
+            .where(MonitoredDomain.is_default.is_(True))
+            .order_by(MonitoredDomain.updated_at_utc.desc(), MonitoredDomain.id.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+
+    def _business_hours_for_domain(
+        self,
+        session,
+        domain: MonitoredDomain | None,
+    ) -> BusinessHoursConfig | None:
+        statement = select(BusinessHoursConfig)
+        if domain is not None:
+            statement = statement.where(BusinessHoursConfig.domain_id == domain.id)
+        return session.execute(
+            statement.order_by(BusinessHoursConfig.id.desc()).limit(1)
+        ).scalar_one_or_none()
 
     def _settings_map(self, session) -> dict[str, str]:
         rows = session.execute(select(RuntimeSetting)).scalars().all()
